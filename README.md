@@ -42,14 +42,7 @@ cd server
 npm install
 ```
 
-Edit `server/.env` and set your mongo connection string and a strong JWT secret:
-
-```
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/custom-bingo
-JWT_SECRET=your_strong_random_secret_here
-CLIENT_URL=http://localhost:5173
-```
+Copy [server/.env.example](server/.env.example) to a new `.env` file in the server folder and update the placeholders. At minimum you will need `PORT`, `MONGODB_URI`, `JWT_SECRET`, `CLIENT_URL`, and `ALLOWED_ORIGINS` (comma-separated list of every URL that should be allowed by CORS).
 
 ### 3. Set up the Frontend
 
@@ -57,6 +50,8 @@ CLIENT_URL=http://localhost:5173
 cd ../client
 npm install
 ```
+
+Create a `.env` file inside `client/` by copying [client/.env.example](client/.env.example). Keep `VITE_API_BASE_URL=/api` for local development so Vite forwards traffic to the backend proxy; replace it with your deployed API URL (for example, `https://custom-bingo-api.onrender.com/api`) when you go live.
 
 ### 4. Start Both Servers
 
@@ -142,7 +137,7 @@ custom-bingo-app/
 
 ## Password Reset
 
-For the MVP, password reset links are logged to the server console. To enable email delivery, configure SMTP settings in `server/.env`:
+For the MVP, password reset links are logged to the server console. To enable email delivery, configure SMTP settings in the server `.env` file (see [server/.env.example](server/.env.example)):
 
 ```
 SMTP_HOST=smtp.gmail.com
@@ -150,3 +145,19 @@ SMTP_PORT=587
 SMTP_USER=your_email@gmail.com
 SMTP_PASS=your_app_password
 ```
+
+## Free Deployment Guide
+
+- **MongoDB Atlas (Database)** — Create an M0 free-tier cluster, add your database user, and whitelist `0.0.0.0/0` or Render's outbound IP list. Copy the connection string into `MONGODB_URI` in `server/.env`.
+- **Render Free Web Service (Backend)** — Push this repo to GitHub, create a new Web Service at Render, point it to `server`, set the build command to `npm install` and start command to `npm start`, then add the env vars from [server/.env.example](server/.env.example). Include every frontend URL in `ALLOWED_ORIGINS` (Render URL, Netlify/Vercel URL, and your custom domain) so CORS accepts them.
+- **Netlify or Vercel (Frontend)** — Import the repo, select `client` as the root, keep the default `npm run build`, and expose `VITE_API_BASE_URL` pointing at your Render API (for example `https://custom-bingo-api.onrender.com/api`). Each platform gives you a free subdomain (`*.netlify.app` or `*.vercel.app`).
+- **Free Custom Domain** — If you want a human-friendly domain at no cost, request a subdomain from services like `js.org`, `is-a.dev`, or `thedev.id`. Once approved, add the CNAME they provide to your Netlify/Vercel site and list the final domain inside `CLIENT_URL`, `ALLOWED_ORIGINS`, and `VITE_API_BASE_URL`.
+- **Optional Cloudflare Proxy** — Point your chosen domain to Cloudflare’s free tier, add the Netlify/Vercel CNAME, and use Cloudflare SSL + caching. Cloudflare also lets you create free `pages.dev` subdomains if you prefer deploying there.
+
+## Deployment Checklist
+
+- Build passes locally with `npm run build` in `client` and `npm start` in `server`.
+- `server/.env` contains production values for `CLIENT_URL` and `ALLOWED_ORIGINS` covering every domain that will load the frontend.
+- `client/.env` sets `VITE_API_BASE_URL` to the fully-qualified backend URL (including `/api`).
+- Render service shows `Server running on port 5000` in its logs and `/api/health` responds with `{ status: "ok" }`.
+- Netlify/Vercel site loads, hits the deployed `/api` successfully, and assets are served from the CDN-backed domain.

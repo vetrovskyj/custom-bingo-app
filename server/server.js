@@ -9,8 +9,35 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
+const resolveAllowedOrigins = () => {
+  const origins = (process.env.ALLOWED_ORIGINS || process.env.CLIENT_URL || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+
+  if (process.env.NODE_ENV !== 'production') {
+    origins.push('http://localhost:5173', 'http://127.0.0.1:5173');
+  }
+
+  return Array.from(new Set(origins));
+};
+
+const allowedOrigins = resolveAllowedOrigins();
+
 // Middleware
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.warn(`Blocked CORS origin: ${origin}`);
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
