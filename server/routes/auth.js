@@ -89,7 +89,7 @@ router.put('/profile', auth, upload.single('profilePicture'), async (req, res) =
   try {
     const updates = {};
     if (req.body.name) updates.name = req.body.name;
-    if (req.file) updates.profilePicture = `/uploads/${req.file.filename}`;
+    if (req.file) updates.profilePicture = upload.toDataURI(req.file);
 
     const user = await User.findByIdAndUpdate(req.userId, updates, { new: true });
     res.json({ user: user.toJSON() });

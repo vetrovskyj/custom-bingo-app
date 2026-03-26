@@ -226,6 +226,7 @@ router.post('/:id/fulfill/:cardIndex', auth, upload.single('photo'), async (req,
       return res.status(400).json({ message: 'Photo is required' });
     }
 
+    const photoDataURI = upload.toDataURI(req.file);
     const card = game.cards[cardIndex];
 
     // Check if user already fulfilled this card
@@ -235,13 +236,13 @@ router.post('/:id/fulfill/:cardIndex', auth, upload.single('photo'), async (req,
 
     if (existingFulfillment) {
       // Update existing fulfillment
-      existingFulfillment.photoUrl = `/uploads/${req.file.filename}`;
+      existingFulfillment.photoUrl = photoDataURI;
       existingFulfillment.status = 'pending';
       existingFulfillment.submittedAt = Date.now();
     } else {
       card.fulfillments.push({
         user: req.userId,
-        photoUrl: `/uploads/${req.file.filename}`,
+        photoUrl: photoDataURI,
         status: 'pending',
       });
     }

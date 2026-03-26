@@ -76,6 +76,11 @@ a:hover {
   color: var(--accent-hover);
 }
 
+a.btn-primary,
+a.btn-primary:hover {
+  color: #ffffff;
+}
+
 img {
   max-width: 100%;
   height: auto;
@@ -144,12 +149,13 @@ img {
 
 .btn-primary {
   background: var(--accent);
-  color: white;
+  color: #ffffff;
   box-shadow: 0 2px 12px var(--accent-glow);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--accent-hover);
+  color: #ffffff;
   transform: translateY(-1px);
   box-shadow: 0 4px 20px var(--accent-glow);
 }

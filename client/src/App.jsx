@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
@@ -26,6 +26,16 @@ const PublicRoute = ({ children }) => {
   return !user ? children : <Navigate to="/dashboard" />;
 };
 
+const JoinRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  const { inviteCode } = useParams();
+  if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
+  if (user) return children;
+  // Store invite code so we can redirect after login/register
+  sessionStorage.setItem('pendingInviteCode', inviteCode);
+  return <Navigate to="/register" />;
+};
+
 const AppRoutes = () => {
   return (
     <>
@@ -41,7 +51,7 @@ const AppRoutes = () => {
           <Route path="/edit/:id" element={<PrivateRoute><EditBingo /></PrivateRoute>} />
           <Route path="/play/:id" element={<PrivateRoute><PlayBingo /></PrivateRoute>} />
           <Route path="/manage/:id" element={<PrivateRoute><ManageBingo /></PrivateRoute>} />
-          <Route path="/join/:inviteCode" element={<PrivateRoute><JoinGame /></PrivateRoute>} />
+          <Route path="/join/:inviteCode" element={<JoinRoute><JoinGame /></JoinRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
