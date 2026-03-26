@@ -9,17 +9,24 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
+const normalizeOrigin = (origin) => {
+  if (!origin) return '';
+  const trimmed = origin.trim();
+  if (!trimmed) return '';
+  return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+};
+
 const resolveAllowedOrigins = () => {
   const origins = (process.env.ALLOWED_ORIGINS || process.env.CLIENT_URL || '')
     .split(',')
-    .map(origin => origin.trim())
+    .map(normalizeOrigin)
     .filter(Boolean);
 
   if (process.env.NODE_ENV !== 'production') {
     origins.push('http://localhost:5173', 'http://127.0.0.1:5173');
   }
 
-  return Array.from(new Set(origins));
+  return Array.from(new Set(origins.map(normalizeOrigin)));
 };
 
 const allowedOrigins = resolveAllowedOrigins();
@@ -28,7 +35,8 @@ const allowedOrigins = resolveAllowedOrigins();
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      const normalizedOrigin = normalizeOrigin(origin);
+      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(normalizedOrigin)) {
         return callback(null, true);
       }
 
