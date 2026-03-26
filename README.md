@@ -42,7 +42,7 @@ cd server
 npm install
 ```
 
-Copy [server/.env.example](server/.env.example) to a new `.env` file in the server folder and update the placeholders. At minimum you will need `PORT`, `MONGODB_URI`, `JWT_SECRET`, `CLIENT_URL`, and `ALLOWED_ORIGINS` (comma-separated list of every URL that should be allowed by CORS).
+Copy [server/.env.example](server/.env.example) to a new `.env` file in the server folder and update the placeholders. At minimum you will need `PORT`, `MONGODB_URI`, `JWT_SECRET`, `CLIENT_URL`, and `ALLOWED_ORIGINS` (comma-, space-, or newline-separated list of every URL that should be allowed by CORS).
 
 ### 3. Set up the Frontend
 

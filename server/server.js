@@ -9,6 +9,12 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
+const splitOrigins = (value = '') =>
+  value
+    .split(/[,\s]+/)
+    .map(entry => entry.trim())
+    .filter(Boolean);
+
 const normalizeOrigin = (origin) => {
   if (!origin) return '';
   const trimmed = origin.trim();
@@ -17,8 +23,7 @@ const normalizeOrigin = (origin) => {
 };
 
 const resolveAllowedOrigins = () => {
-  const origins = (process.env.ALLOWED_ORIGINS || process.env.CLIENT_URL || '')
-    .split(',')
+  const origins = splitOrigins(process.env.ALLOWED_ORIGINS || process.env.CLIENT_URL || '')
     .map(normalizeOrigin)
     .filter(Boolean);
 
@@ -30,18 +35,27 @@ const resolveAllowedOrigins = () => {
 };
 
 const allowedOrigins = resolveAllowedOrigins();
+console.log('CORS allowed origins:', allowedOrigins.length ? allowedOrigins : '(none — all origins allowed)');
 
 // Middleware
 app.use(
   cors({
     origin: (origin, callback) => {
+      // Allow requests with no origin (server-to-server, curl, health checks)
+      if (!origin) return callback(null, true);
+
+      // If no origins configured, allow everything
+      if (allowedOrigins.length === 0) return callback(null, true);
+
       const normalizedOrigin = normalizeOrigin(origin);
-      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(normalizedOrigin)) {
+      if (allowedOrigins.includes(normalizedOrigin)) {
         return callback(null, true);
       }
 
-      console.warn(`Blocked CORS origin: ${origin}`);
-      return callback(new Error('Not allowed by CORS'));
+      console.warn(`Blocked CORS request from origin: ${origin} (normalized: ${normalizedOrigin})`);
+      console.warn('Allowed origins:', allowedOrigins);
+      // Return false instead of an Error to avoid Express 500 — browser still sees CORS block
+      return callback(null, false);
     },
     credentials: true,
   })
