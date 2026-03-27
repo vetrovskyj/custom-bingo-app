@@ -629,6 +629,10 @@ select.form-input {
 
 /* =================== Upload Area =================== */
 .upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   border: 2px dashed var(--border);
   border-radius: var(--radius);
   padding: 2rem;
@@ -661,7 +665,6 @@ select.form-input {
 .upload-preview {
   max-height: 200px;
   border-radius: var(--radius-sm);
-  margin-top: 1rem;
 }
 
 /* =================== Invite Section =================== */
@@ -938,4 +941,157 @@ select.form-input {
 ::selection {
   background: var(--accent);
   color: white;
+}
+
+/* =================== Activity Log =================== */
+.activity-log {
+  margin-top: 2rem;
+}
+
+.activity-log-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.activity-item {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.activity-item.bingo-alert {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(108, 99, 255, 0.05));
+  box-shadow: 0 8px 24px rgba(108, 99, 255, 0.15);
+  align-items: flex-start;
+}
+
+.activity-text {
+  flex: 1;
+}
+
+.activity-time {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.activity-item.bingo-alert .activity-time {
+  align-self: flex-start;
+}
+
+.activity-bingo-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.activity-bingo-line {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.activity-bingo-icon {
+  font-size: 1rem;
+}
+
+.activity-bingo-visual {
+  display: inline-flex;
+  padding: 0.45rem 0.6rem;
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+}
+
+.activity-bingo-visual .mini-board {
+  margin-top: 0;
+}
+
+/* =================== Mini Bingo Board =================== */
+.mini-board {
+  display: inline-grid;
+  gap: 2px;
+  margin-top: 0.5rem;
+}
+
+.mini-cell {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+.mini-cell.mini-filled {
+  background: var(--success-bg);
+  border-color: var(--success);
+}
+
+.mini-cell.mini-bingo-line {
+  background: var(--accent);
+  border-color: var(--accent-hover);
+}
+
+/* =================== Proof Type Badge =================== */
+.proof-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+/* =================== Card Description =================== */
+.card-description-toggle {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0.15rem 0;
+  font-family: var(--font);
+}
+
+.card-description-toggle:hover {
+  text-decoration: underline;
+}
+
+.card-description-input {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  margin-top: 0.25rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 0.7rem;
+  resize: none;
+  outline: none;
+}
+
+.card-description-input:focus {
+  border-color: var(--accent);
 }

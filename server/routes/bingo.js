@@ -10,7 +10,7 @@ const router = express.Router();
 // POST /api/bingo - Create a new bingo game
 router.post('/', auth, async (req, res) => {
   try {
-    const { title, description, rows, cols, cards, invitedEmails } = req.body;
+    const { title, description, rows, cols, cards, invitedEmails, proofType } = req.body;
 
     if (!title || !rows || !cols || !cards) {
       return res.status(400).json({ message: 'Title, dimensions, and cards are required' });
@@ -35,12 +35,14 @@ router.post('/', auth, async (req, res) => {
       cols,
       cards: cards.map((card, index) => ({
         text: card.text,
+        description: card.description || '',
         position: index,
         fulfillments: [],
       })),
       inviteCode,
       invitedEmails: invitedEmails || [],
       players: [req.userId],
+      proofType: proofType || 'photo',
     });
 
     await game.save();
@@ -155,29 +157,58 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(403).json({ message: 'Only the creator can edit this game' });
     }
 
-    const { title, description, rows, cols, cards, invitedEmails, isActive } = req.body;
+    const { title, description, rows, cols, cards, invitedEmails, isActive, proofType } = req.body;
 
-    if (title) game.title = title;
-    if (description !== undefined) game.description = description;
-    if (invitedEmails) game.invitedEmails = invitedEmails;
-    if (isActive !== undefined) game.isActive = isActive;
+    // Build a flat $set payload so we bypass Mongoose change-tracking entirely
+    const $set = {};
+
+    if (title) $set.title = title;
+    if (description !== undefined) $set.description = description;
+    if (invitedEmails) $set.invitedEmails = invitedEmails;
+    if (isActive !== undefined) $set.isActive = isActive;
+    if (proofType) $set.proofType = proofType;
 
     // Allow dimension and card changes
     if (rows && cols && cards) {
-      game.rows = rows;
-      game.cols = cols;
-      game.cards = cards.map((card, index) => ({
-        text: card.text,
-        position: index,
-        fulfillments: card.fulfillments || [],
-      }));
+      const expectedCards = rows * cols;
+      if (!Array.isArray(cards) || cards.length !== expectedCards) {
+        return res.status(400).json({ message: `Expected ${expectedCards} cards for ${rows}x${cols} grid` });
+      }
+
+      $set.rows = rows;
+      $set.cols = cols;
+
+      const previousCards = game.cards || [];
+      const updatedCards = [];
+      for (let index = 0; index < expectedCards; index++) {
+        const payloadCard = cards[index] || {};
+        const existingCard = previousCards[index];
+
+        const textValue = (payloadCard.text ?? existingCard?.text ?? '').trim();
+        if (!textValue) {
+          return res.status(400).json({ message: `Card ${index + 1} must include text` });
+        }
+
+        updatedCards.push({
+          text: textValue,
+          description: (payloadCard.description ?? existingCard?.description ?? '').trim(),
+          position: index,
+          fulfillments: existingCard?.fulfillments || [],
+        });
+      }
+
+      $set.cards = updatedCards;
     }
 
-    await game.save();
-    await game.populate('creator', 'name email profilePicture');
-    await game.populate('players', 'name email profilePicture');
+    const updated = await BingoGame.findByIdAndUpdate(
+      req.params.id,
+      { $set },
+      { new: true, runValidators: true }
+    )
+      .populate('creator', 'name email profilePicture')
+      .populate('players', 'name email profilePicture');
 
-    res.json({ game });
+    res.json({ game: updated });
   } catch (error) {
     console.error('Update game error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -204,7 +235,7 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-// POST /api/bingo/:id/fulfill/:cardIndex - Fulfill a card with photo proof
+// POST /api/bingo/:id/fulfill/:cardIndex - Fulfill a card with proof
 router.post('/:id/fulfill/:cardIndex', auth, upload.single('photo'), async (req, res) => {
   try {
     const game = await BingoGame.findById(req.params.id);
@@ -222,11 +253,6 @@ router.post('/:id/fulfill/:cardIndex', auth, upload.single('photo'), async (req,
       return res.status(400).json({ message: 'Invalid card index' });
     }
 
-    if (!req.file) {
-      return res.status(400).json({ message: 'Photo is required' });
-    }
-
-    const photoDataURI = upload.toDataURI(req.file);
     const card = game.cards[cardIndex];
 
     // Check if user already fulfilled this card
@@ -234,16 +260,38 @@ router.post('/:id/fulfill/:cardIndex', auth, upload.single('photo'), async (req,
       f => f.user.toString() === req.userId.toString()
     );
 
+    let photoDataURI = '';
+    let textProof = '';
+    let autoApprove = false;
+
+    if (game.proofType === 'photo') {
+      if (!req.file) {
+        return res.status(400).json({ message: 'Photo is required' });
+      }
+      photoDataURI = upload.toDataURI(req.file);
+    } else if (game.proofType === 'text') {
+      textProof = req.body.textProof || '';
+      if (!textProof.trim()) {
+        return res.status(400).json({ message: 'Text proof is required' });
+      }
+    } else {
+      // proofType === 'none'
+      autoApprove = true;
+    }
+
+    const status = autoApprove ? 'approved' : 'pending';
+
     if (existingFulfillment) {
-      // Update existing fulfillment
       existingFulfillment.photoUrl = photoDataURI;
-      existingFulfillment.status = 'pending';
+      existingFulfillment.textProof = textProof;
+      existingFulfillment.status = status;
       existingFulfillment.submittedAt = Date.now();
     } else {
       card.fulfillments.push({
         user: req.userId,
         photoUrl: photoDataURI,
-        status: 'pending',
+        textProof,
+        status,
       });
     }
 

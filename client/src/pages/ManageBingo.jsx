@@ -111,6 +111,10 @@ const ManageBingo = () => {
           <h1 className="page-title">{game.title}</h1>
           <p className="page-subtitle">
             Manage your bingo game • {game.rows}×{game.cols} • {game.players?.length} players
+            {' • '}
+            <span className="proof-type-badge">
+              {game.proofType === 'photo' ? '📸 Photo' : game.proofType === 'text' ? '📝 Text' : '✅ No'} proof
+            </span>
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -215,18 +219,24 @@ const ManageBingo = () => {
             <div className="empty-state">
               <div className="empty-icon">📋</div>
               <h3 className="empty-title">No submissions yet</h3>
-              <p className="empty-text">Players haven't submitted any proof photos yet.</p>
+              <p className="empty-text">
+                {game.proofType === 'none'
+                  ? 'Cards are auto-approved — no submissions to review.'
+                  : 'Players haven\'t submitted any proofs yet.'}
+              </p>
             </div>
           ) : (
             <div className="review-list">
               {getAllFulfillments().map((f, i) => (
                 <div key={i} className="review-item">
-                  <img
-                    src={f.photoUrl}
-                    alt="Proof"
-                    className="review-photo"
-                    onClick={() => setPhotoModal(f.photoUrl)}
-                  />
+                  {f.photoUrl && (
+                    <img
+                      src={f.photoUrl}
+                      alt="Proof"
+                      className="review-photo"
+                      onClick={() => setPhotoModal(f.photoUrl)}
+                    />
+                  )}
                   <div className="review-info">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
                       <Avatar user={f.user} size="sm" />
@@ -236,6 +246,11 @@ const ManageBingo = () => {
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
                       Card: "{f.cardText}"
                     </p>
+                    {f.textProof && (
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.25rem', fontStyle: 'italic' }}>
+                        📝 "{f.textProof}"
+                      </p>
+                    )}
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       {new Date(f.submittedAt).toLocaleString()}
                     </p>

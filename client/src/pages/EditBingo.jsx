@@ -12,6 +12,8 @@ const EditBingo = () => {
   const [cols, setCols] = useState(4);
   const [cards, setCards] = useState([]);
   const [inviteEmails, setInviteEmails] = useState('');
+  const [proofType, setProofType] = useState('photo');
+  const [expandedDesc, setExpandedDesc] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -34,8 +36,9 @@ const EditBingo = () => {
       setDescription(game.description || '');
       setRows(game.rows);
       setCols(game.cols);
-      setCards(game.cards.map(c => ({ text: c.text, fulfillments: c.fulfillments })));
+      setCards(game.cards.map(c => ({ text: c.text, description: c.description || '' })));
       setInviteEmails(game.invitedEmails?.join(', ') || '');
+      setProofType(game.proofType || 'photo');
     } catch (error) {
       toast.error('Failed to load game');
       navigate('/dashboard');
@@ -48,7 +51,7 @@ const EditBingo = () => {
     const total = newRows * newCols;
     const newCards = Array.from({ length: total }, (_, i) => ({
       text: i < cards.length ? cards[i].text : '',
-      fulfillments: i < cards.length ? cards[i].fulfillments : [],
+      description: i < cards.length ? cards[i].description || '' : '',
     }));
     setRows(newRows);
     setCols(newCols);
@@ -58,6 +61,12 @@ const EditBingo = () => {
   const updateCardText = (index, text) => {
     const updated = [...cards];
     updated[index] = { ...updated[index], text };
+    setCards(updated);
+  };
+
+  const updateCardDescription = (index, description) => {
+    const updated = [...cards];
+    updated[index] = { ...updated[index], description };
     setCards(updated);
   };
 
@@ -87,6 +96,7 @@ const EditBingo = () => {
         cols,
         cards,
         invitedEmails: emails,
+        proofType,
       });
 
       toast.success('Game updated!');
@@ -163,6 +173,18 @@ const EditBingo = () => {
                 ))}
               </select>
             </div>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label className="form-label">Proof Type</label>
+              <select
+                className="form-input"
+                value={proofType}
+                onChange={(e) => setProofType(e.target.value)}
+              >
+                <option value="photo">📸 Photo</option>
+                <option value="text">📝 Text</option>
+                <option value="none">✅ None</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -181,7 +203,7 @@ const EditBingo = () => {
                   style={{
                     width: '100%',
                     height: '100%',
-                    minHeight: '60px',
+                    minHeight: '40px',
                     background: 'transparent',
                     border: 'none',
                     color: 'var(--text-primary)',
@@ -196,6 +218,26 @@ const EditBingo = () => {
                   onChange={(e) => updateCardText(index, e.target.value)}
                   maxLength={200}
                 />
+                {expandedDesc === index ? (
+                  <textarea
+                    className="card-description-input"
+                    placeholder="Description (optional)"
+                    value={card.description}
+                    onChange={(e) => updateCardDescription(index, e.target.value)}
+                    maxLength={500}
+                    rows={2}
+                    autoFocus
+                    onBlur={() => !card.description && setExpandedDesc(null)}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    className="card-description-toggle"
+                    onClick={() => setExpandedDesc(index)}
+                  >
+                    {card.description ? '📝 desc' : '+ desc'}
+                  </button>
+                )}
               </div>
             ))}
           </div>

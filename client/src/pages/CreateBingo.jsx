@@ -10,15 +10,18 @@ const CreateBingo = () => {
   const [rows, setRows] = useState(4);
   const [cols, setCols] = useState(4);
   const [cards, setCards] = useState(
-    Array.from({ length: 16 }, (_, i) => ({ text: '' }))
+    Array.from({ length: 16 }, (_, i) => ({ text: '', description: '' }))
   );
   const [inviteEmails, setInviteEmails] = useState('');
+  const [proofType, setProofType] = useState('photo');
+  const [expandedDesc, setExpandedDesc] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const updateDimensions = (newRows, newCols) => {
     const total = newRows * newCols;
     const newCards = Array.from({ length: total }, (_, i) => ({
       text: i < cards.length ? cards[i].text : '',
+      description: i < cards.length ? cards[i].description || '' : '',
     }));
     setRows(newRows);
     setCols(newCols);
@@ -28,6 +31,12 @@ const CreateBingo = () => {
   const updateCardText = (index, text) => {
     const updated = [...cards];
     updated[index] = { ...updated[index], text };
+    setCards(updated);
+  };
+
+  const updateCardDescription = (index, description) => {
+    const updated = [...cards];
+    updated[index] = { ...updated[index], description };
     setCards(updated);
   };
 
@@ -57,6 +66,7 @@ const CreateBingo = () => {
         cols,
         cards,
         invitedEmails: emails,
+        proofType,
       });
 
       toast.success('Bingo game created!');
@@ -131,6 +141,18 @@ const CreateBingo = () => {
                 ))}
               </select>
             </div>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label className="form-label">Proof Type</label>
+              <select
+                className="form-input"
+                value={proofType}
+                onChange={(e) => setProofType(e.target.value)}
+              >
+                <option value="photo">📸 Photo</option>
+                <option value="text">📝 Text</option>
+                <option value="none">✅ None</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -155,7 +177,7 @@ const CreateBingo = () => {
                   style={{
                     width: '100%',
                     height: '100%',
-                    minHeight: '60px',
+                    minHeight: '40px',
                     background: 'transparent',
                     border: 'none',
                     color: 'var(--text-primary)',
@@ -170,6 +192,26 @@ const CreateBingo = () => {
                   onChange={(e) => updateCardText(index, e.target.value)}
                   maxLength={200}
                 />
+                {expandedDesc === index ? (
+                  <textarea
+                    className="card-description-input"
+                    placeholder="Description (optional)"
+                    value={card.description}
+                    onChange={(e) => updateCardDescription(index, e.target.value)}
+                    maxLength={500}
+                    rows={2}
+                    autoFocus
+                    onBlur={() => !card.description && setExpandedDesc(null)}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    className="card-description-toggle"
+                    onClick={() => setExpandedDesc(index)}
+                  >
+                    {card.description ? '📝 desc' : '+ desc'}
+                  </button>
+                )}
               </div>
             ))}
           </div>

@@ -8,7 +8,11 @@ const fulfillmentSchema = new mongoose.Schema({
   },
   photoUrl: {
     type: String,
-    required: true,
+    default: '',
+  },
+  textProof: {
+    type: String,
+    default: '',
   },
   status: {
     type: String,
@@ -26,6 +30,12 @@ const cardSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
+  },
+  description: {
+    type: String,
+    default: '',
+    trim: true,
+    maxlength: 500,
   },
   position: {
     type: Number,
@@ -78,6 +88,11 @@ const bingoGameSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   }],
+  proofType: {
+    type: String,
+    enum: ['none', 'text', 'photo'],
+    default: 'photo',
+  },
   isActive: {
     type: Boolean,
     default: true,
