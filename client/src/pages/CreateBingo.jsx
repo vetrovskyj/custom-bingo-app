@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLang } from '../context/LangContext';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
 const CreateBingo = () => {
   const navigate = useNavigate();
+  const { t } = useLang();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [rows, setRows] = useState(4);
@@ -44,12 +46,12 @@ const CreateBingo = () => {
     e.preventDefault();
 
     if (!title.trim()) {
-      return toast.error('Please enter a title');
+      return toast.error(t('create.error.title'));
     }
 
     const emptyCards = cards.filter(c => !c.text.trim());
     if (emptyCards.length > 0) {
-      return toast.error(`Please fill in all ${rows * cols} cards`);
+      return toast.error(t('create.error.cards', { n: rows * cols }));
     }
 
     setLoading(true);
@@ -69,10 +71,10 @@ const CreateBingo = () => {
         proofType,
       });
 
-      toast.success('Bingo game created!');
+      toast.success(t('create.success'));
       navigate(`/manage/${res.data.game._id}`);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create game');
+      toast.error(error.response?.data?.message || t('create.error.fail'));
     } finally {
       setLoading(false);
     }
@@ -82,21 +84,21 @@ const CreateBingo = () => {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Create New Bingo</h1>
-          <p className="page-subtitle">Set up your bingo board and invite players</p>
+          <h1 className="page-title">{t('create.title')}</h1>
+          <p className="page-subtitle">{t('create.subtitle')}</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="card" style={{ marginBottom: '1.5rem' }}>
-          <h3 className="card-title" style={{ marginBottom: '1rem' }}>Game Info</h3>
+          <h3 className="card-title" style={{ marginBottom: '1rem' }}>{t('create.gameInfo')}</h3>
 
           <div className="form-group">
-            <label className="form-label">Title *</label>
+            <label className="form-label">{t('create.titleLabel')}</label>
             <input
               type="text"
               className="form-input"
-              placeholder="e.g., Summer Fun Bingo, Office Bingo..."
+              placeholder={t('create.titlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
@@ -105,10 +107,10 @@ const CreateBingo = () => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Description (optional)</label>
+            <label className="form-label">{t('create.descLabel')}</label>
             <textarea
               className="form-input"
-              placeholder="Describe your bingo game..."
+              placeholder={t('create.descPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={500}
@@ -118,7 +120,7 @@ const CreateBingo = () => {
 
           <div style={{ display: 'flex', gap: '1rem' }}>
             <div className="form-group" style={{ flex: 1 }}>
-              <label className="form-label">Rows</label>
+              <label className="form-label">{t('create.rows')}</label>
               <select
                 className="form-input"
                 value={rows}
@@ -130,7 +132,7 @@ const CreateBingo = () => {
               </select>
             </div>
             <div className="form-group" style={{ flex: 1 }}>
-              <label className="form-label">Columns</label>
+              <label className="form-label">{t('create.cols')}</label>
               <select
                 className="form-input"
                 value={cols}
@@ -142,15 +144,15 @@ const CreateBingo = () => {
               </select>
             </div>
             <div className="form-group" style={{ flex: 1 }}>
-              <label className="form-label">Proof Type</label>
+              <label className="form-label">{t('create.proofType')}</label>
               <select
                 className="form-input"
                 value={proofType}
                 onChange={(e) => setProofType(e.target.value)}
               >
-                <option value="photo">📸 Photo</option>
-                <option value="text">📝 Text</option>
-                <option value="none">✅ None</option>
+                <option value="photo">{t('create.proofPhoto')}</option>
+                <option value="text">{t('create.proofText')}</option>
+                <option value="none">{t('create.proofNone')}</option>
               </select>
             </div>
           </div>
@@ -158,10 +160,10 @@ const CreateBingo = () => {
 
         <div className="card" style={{ marginBottom: '1.5rem' }}>
           <h3 className="card-title" style={{ marginBottom: '1rem' }}>
-            Bingo Cards ({rows}×{cols} = {rows * cols} cards)
+            {t('create.cardsTitle', { rows, cols, total: rows * cols })}
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
-            Fill in each card with a challenge or task for players to complete.
+            {t('create.cardsSubtitle')}
           </p>
 
           <div
@@ -187,7 +189,7 @@ const CreateBingo = () => {
                     textAlign: 'center',
                     outline: 'none',
                   }}
-                  placeholder={`Card ${index + 1}`}
+                  placeholder={t('create.cardPlaceholder', { n: index + 1 })}
                   value={card.text}
                   onChange={(e) => updateCardText(index, e.target.value)}
                   maxLength={200}
@@ -195,7 +197,7 @@ const CreateBingo = () => {
                 {expandedDesc === index ? (
                   <textarea
                     className="card-description-input"
-                    placeholder="Description (optional)"
+                    placeholder={t('create.descInputPlaceholder')}
                     value={card.description}
                     onChange={(e) => updateCardDescription(index, e.target.value)}
                     maxLength={500}
@@ -209,7 +211,7 @@ const CreateBingo = () => {
                     className="card-description-toggle"
                     onClick={() => setExpandedDesc(index)}
                   >
-                    {card.description ? '📝 desc' : '+ desc'}
+                    {card.description ? t('create.descToggleFilled') : t('create.descToggle')}
                   </button>
                 )}
               </div>
@@ -218,16 +220,16 @@ const CreateBingo = () => {
         </div>
 
         <div className="card" style={{ marginBottom: '1.5rem' }}>
-          <h3 className="card-title" style={{ marginBottom: '1rem' }}>Invite Players (optional)</h3>
+          <h3 className="card-title" style={{ marginBottom: '1rem' }}>{t('create.inviteTitle')}</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
-            Enter email addresses separated by commas. You can also share the invite link after creating the game.
+            {t('create.inviteSubtitle')}
           </p>
 
           <div className="form-group">
-            <label className="form-label">Email Addresses</label>
+            <label className="form-label">{t('create.inviteLabel')}</label>
             <textarea
               className="form-input"
-              placeholder="friend1@email.com, friend2@email.com"
+              placeholder={t('create.invitePlaceholder')}
               value={inviteEmails}
               onChange={(e) => setInviteEmails(e.target.value)}
               rows={3}
@@ -241,14 +243,14 @@ const CreateBingo = () => {
             className="btn btn-secondary"
             onClick={() => navigate('/dashboard')}
           >
-            Cancel
+            {t('create.cancel')}
           </button>
           <button
             type="submit"
             className="btn btn-primary btn-lg"
             disabled={loading}
           >
-            {loading ? 'Creating...' : '🎯 Create Bingo Game'}
+            {loading ? t('create.creating') : t('create.submit')}
           </button>
         </div>
       </form>

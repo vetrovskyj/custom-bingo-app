@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LangProvider } from './context/LangContext';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -64,8 +65,9 @@ const AppRoutes = () => {
 const App = () => {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
+      <LangProvider>
+        <AuthProvider>
+          <AppRoutes />
         <Toaster
           position="top-right"
           toastOptions={{
@@ -77,8 +79,9 @@ const App = () => {
               border: '1px solid rgba(108, 99, 255, 0.2)',
             },
           }}
-        />
-      </AuthProvider>
+          />
+        </AuthProvider>
+      </LangProvider>
     </BrowserRouter>
   );
 };

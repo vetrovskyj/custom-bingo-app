@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useLang } from '../context/LangContext';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
@@ -8,6 +9,7 @@ import toast from 'react-hot-toast';
 const PlayBingo = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const { t } = useLang();
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedCard, setSelectedCard] = useState(null);
@@ -23,11 +25,11 @@ const PlayBingo = () => {
       setGame(res.data.game);
       setIsCreator(res.data.isCreator);
     } catch (error) {
-      toast.error('Failed to load game');
+      toast.error(t('play.error.load'));
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, t]);
 
   useEffect(() => {
     fetchGame();
@@ -37,7 +39,7 @@ const PlayBingo = () => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('File must be less than 5MB');
+        toast.error(t('play.fileTooLarge'));
         return;
       }
       setSelectedFile(file);
@@ -72,10 +74,10 @@ const PlayBingo = () => {
         setGame(res.data.game);
       }
 
-      toast.success(proofType === 'none' ? 'Card completed!' : 'Proof submitted! Waiting for approval.');
+      toast.success(proofType === 'none' ? t('play.success.none') : t('play.success.proof'));
       closeModal();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Submission failed');
+      toast.error(error.response?.data?.message || t('play.error.submit'));
     } finally {
       setUploading(false);
     }
@@ -105,6 +107,8 @@ const PlayBingo = () => {
     return card.fulfillments?.filter(f => f.status === 'approved' || f.status === 'pending') || [];
   };
 
+  const translateStatus = (status) => t(`status.${status}`);
+
   const lineDefinitions = useMemo(() => {
     if (!game) return [];
     const defs = [];
@@ -113,7 +117,7 @@ const PlayBingo = () => {
     for (let r = 0; r < rows; r++) {
       defs.push({
         id: `row-${r}`,
-        label: `Row ${r + 1}`,
+        label: t('line.row', { n: r + 1 }),
         cells: Array.from({ length: cols }, (_, c) => r * cols + c),
       });
     }
@@ -121,7 +125,7 @@ const PlayBingo = () => {
     for (let c = 0; c < cols; c++) {
       defs.push({
         id: `col-${c}`,
-        label: `Column ${c + 1}`,
+        label: t('line.col', { n: c + 1 }),
         cells: Array.from({ length: rows }, (_, r) => r * cols + c),
       });
     }
@@ -129,18 +133,18 @@ const PlayBingo = () => {
     if (rows === cols) {
       defs.push({
         id: 'diag-main',
-        label: 'Main diagonal',
+        label: t('line.diagMain'),
         cells: Array.from({ length: rows }, (_, i) => i * cols + i),
       });
       defs.push({
         id: 'diag-anti',
-        label: 'Anti diagonal',
+        label: t('line.diagAnti'),
         cells: Array.from({ length: rows }, (_, i) => i * cols + (cols - 1 - i)),
       });
     }
 
     return defs;
-  }, [game]);
+  }, [game, t]);
 
   // Bingo detection: find completed lines for each player
   const detectBingos = useMemo(() => {
@@ -259,8 +263,8 @@ const PlayBingo = () => {
     return (
       <div className="empty-state">
         <div className="empty-icon">😕</div>
-        <h3 className="empty-title">Game not found</h3>
-        <Link to="/dashboard" className="btn btn-primary">Back to Dashboard</Link>
+        <h3 className="empty-title">{t('play.notFound')}</h3>
+        <Link to="/dashboard" className="btn btn-primary">{t('play.backToDashboard')}</Link>
       </div>
     );
   }
@@ -274,21 +278,21 @@ const PlayBingo = () => {
           <h1 className="page-title">{game.title}</h1>
           {game.description && <p className="page-subtitle">{game.description}</p>}
           <div className="game-card-meta" style={{ marginTop: '0.5rem' }}>
-            <span>Created by {game.creator?.name}</span>
-            <span>👥 {game.players?.length} players</span>
+            <span>{t('play.createdBy')} {game.creator?.name}</span>
+            <span>👥 {game.players?.length} {t('play.players')}</span>
             <span className="proof-type-badge">
-              {proofType === 'photo' ? '📸 Photo' : proofType === 'text' ? '📝 Text' : '✅ No'} proof
+              {proofType === 'photo' ? t('play.proofPhoto') : proofType === 'text' ? t('play.proofText') : t('play.proofNone')} {t('play.proof')}
             </span>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           {isCreator && (
             <Link to={`/manage/${game._id}`} className="btn btn-secondary btn-sm">
-              ⚙️ Manage
+              {t('play.manage')}
             </Link>
           )}
           <button className="btn btn-ghost btn-sm" onClick={fetchGame}>
-            🔄 Refresh
+            {t('play.refresh')}
           </button>
         </div>
       </div>
@@ -296,7 +300,7 @@ const PlayBingo = () => {
       {/* Players bar */}
       <div className="card" style={{ marginBottom: '1.5rem', padding: '1rem 1.25rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Players:</span>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>{t('play.playersLabel')}</span>
           {game.players?.map(player => (
             <div key={player._id} className="tooltip-container" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
               <Avatar user={player} size="sm" />
@@ -306,6 +310,25 @@ const PlayBingo = () => {
           ))}
         </div>
       </div>
+
+      {/* Bingo Alerts */}
+      {detectBingos.bingos.length > 0 && (
+        <div className="card" style={{ marginBottom: '1.5rem', padding: '1rem 1.25rem', borderColor: 'var(--accent)' }}>
+          <div style={{ fontWeight: 600, marginBottom: '0.5rem', color: 'var(--accent)' }}>{t('play.bingo')}</div>
+          {Object.values(detectBingos.playerBingos).map(({ player, lines, grid }) => {
+            const allBingoCells = lines.flatMap(l => l.cells);
+            return (
+              <div key={player._id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <Avatar user={player} size="sm" />
+                <span style={{ fontSize: '0.85rem' }}>
+                  <strong>{player.name}</strong> — {t(lines.length === 1 ? 'play.bingoLines' : 'play.bingoLines_plural', { count: lines.length })}
+                </span>
+                {renderMiniBoard(grid, allBingoCells)}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Bingo Board */}
       <div
@@ -331,7 +354,7 @@ const PlayBingo = () => {
                     <div key={i} className="tooltip-container">
                       <Avatar user={f.user} size="sm" />
                       <span className="tooltip">
-                        {f.user?.name} ({f.status})
+                        {f.user?.name} ({translateStatus(f.status)})
                       </span>
                     </div>
                   ))}
@@ -342,7 +365,7 @@ const PlayBingo = () => {
                   className={`fulfillment-status status-${myFulfillment.status}`}
                   style={{ marginTop: '0.25rem' }}
                 >
-                  {myFulfillment.status}
+                  {translateStatus(myFulfillment.status)}
                 </span>
               )}
             </div>
@@ -354,22 +377,22 @@ const PlayBingo = () => {
       <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
           <div style={{ width: 12, height: 12, borderRadius: 3, border: '2px solid var(--success)', background: 'var(--success-bg)' }} />
-          Approved
+          {t('play.legend.approved')}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
           <div style={{ width: 12, height: 12, borderRadius: 3, border: '2px solid var(--warning)', background: 'var(--warning-bg)' }} />
-          Pending
+          {t('play.legend.pending')}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
           <div style={{ width: 12, height: 12, borderRadius: 3, border: '2px solid var(--danger)' }} />
-          Declined
+          {t('play.legend.declined')}
         </div>
       </div>
 
       {/* Activity Log */}
       {activityLog.length > 0 && (
         <div className="activity-log">
-          <div className="activity-log-title">📋 Activity Log</div>
+          <div className="activity-log-title">{t('play.activityLog')}</div>
           <div className="activity-list">
             {activityLog.map((item, i) => {
               const isBingo = item.type === 'bingo';
@@ -382,7 +405,7 @@ const PlayBingo = () => {
                         <div className="activity-bingo-line">
                           <span className="activity-bingo-icon">🎯</span>
                           <span>
-                            <strong>{item.user?.name}</strong> completed a bingo ({item.lineLabel}) 🎉
+                            <strong>{item.user?.name}</strong> {t('play.completedBingo')} ({item.lineLabel}) 🎉
                           </span>
                         </div>
                         {item.grid && item.lineCells && (
@@ -393,7 +416,7 @@ const PlayBingo = () => {
                       </div>
                     ) : (
                       <>
-                        <strong>{item.user?.name}</strong> completed "{item.cardText}"
+                        <strong>{item.user?.name}</strong> {t('play.completed')} "{item.cardText}"
                       </>
                     )}
                   </div>
@@ -413,7 +436,7 @@ const PlayBingo = () => {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title">
-                {proofType === 'none' ? 'Complete Card' : 'Submit Proof'}
+                {proofType === 'none' ? t('play.modal.complete') : t('play.modal.submit')}
               </h3>
               <button className="modal-close" onClick={closeModal}>×</button>
             </div>
@@ -433,7 +456,7 @@ const PlayBingo = () => {
               {proofType === 'photo' && (
                 <>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                    Upload a photo as proof that you completed this challenge.
+                    {t('play.modal.photoSubtitle')}
                   </p>
                   <label className={`upload-area ${selectedFile ? 'has-file' : ''}`}>
                     <input
@@ -447,9 +470,9 @@ const PlayBingo = () => {
                     ) : (
                       <>
                         <div className="upload-icon">📸</div>
-                        <div className="upload-text">Click to upload a photo</div>
+                        <div className="upload-text">{t('play.modal.uploadClick')}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                          JPG, PNG, GIF or WebP (max 5MB)
+                          {t('play.modal.uploadFormats')}
                         </div>
                       </>
                     )}
@@ -460,11 +483,11 @@ const PlayBingo = () => {
               {proofType === 'text' && (
                 <>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                    Describe how you completed this challenge.
+                    {t('play.modal.textSubtitle')}
                   </p>
                   <textarea
                     className="form-input"
-                    placeholder="Write your proof here..."
+                    placeholder={t('play.modal.textPlaceholder')}
                     value={textProof}
                     onChange={(e) => setTextProof(e.target.value)}
                     rows={4}
@@ -475,14 +498,14 @@ const PlayBingo = () => {
 
               {proofType === 'none' && (
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textAlign: 'center' }}>
-                  Click the button below to mark this card as completed. No proof required!
+                  {t('play.modal.noneSubtitle')}
                 </p>
               )}
             </div>
 
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={closeModal}>
-                Cancel
+                {t('play.modal.cancelBtn')}
               </button>
               <button
                 className="btn btn-primary"
@@ -494,10 +517,10 @@ const PlayBingo = () => {
                 }
               >
                 {uploading
-                  ? 'Submitting...'
+                  ? t('play.modal.submitting')
                   : proofType === 'none'
-                    ? '✅ Mark Complete'
-                    : '📤 Submit Proof'
+                    ? t('play.modal.markComplete')
+                    : t('play.modal.submitProof')
                 }
               </button>
             </div>

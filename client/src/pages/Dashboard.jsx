@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useLang } from '../context/LangContext';
 import api from '../api/axios';
 import Avatar from '../components/Avatar';
 import toast from 'react-hot-toast';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { t } = useLang();
   const [myGames, setMyGames] = useState([]);
   const [playingGames, setPlayingGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +37,7 @@ const Dashboard = () => {
       setMyGames(myRes.data.games);
       setPlayingGames(playingRes.data.games);
     } catch (error) {
-      toast.error('Failed to load games');
+      toast.error(t('dashboard.error.load'));
     } finally {
       setLoading(false);
     }
@@ -48,12 +50,12 @@ const Dashboard = () => {
     setJoining(true);
     try {
       const res = await api.get(`/bingo/join/${code}`);
-      toast.success(`Joined "${res.data.game.title}"!`);
+      toast.success(t('dashboard.joined', { title: res.data.game.title }));
       setJoinModalOpen(false);
       setJoinCode('');
       navigate(`/play/${res.data.game._id}`);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to join game');
+      toast.error(error.response?.data?.message || t('dashboard.error.join'));
     } finally {
       setJoining(false);
     }
@@ -67,15 +69,15 @@ const Dashboard = () => {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Manage your bingo games or play others</p>
+          <h1 className="page-title">{t('dashboard.title')}</h1>
+          <p className="page-subtitle">{t('dashboard.subtitle')}</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <button className="btn btn-secondary" onClick={() => setJoinModalOpen(true)}>
-            🎮 Join Existing Bingo
+            {t('dashboard.joinExisting')}
           </button>
           <Link to="/create" className="btn btn-primary">
-            + Create New Bingo
+            {t('dashboard.createNew')}
           </Link>
         </div>
       </div>
@@ -85,13 +87,13 @@ const Dashboard = () => {
           className={`tab ${activeTab === 'my-games' ? 'active' : ''}`}
           onClick={() => setActiveTab('my-games')}
         >
-          My Games ({myGames.length})
+          {t('dashboard.myGames')} ({myGames.length})
         </button>
         <button
           className={`tab ${activeTab === 'playing' ? 'active' : ''}`}
           onClick={() => setActiveTab('playing')}
         >
-          Playing ({playingGames.length})
+          {t('dashboard.playing')} ({playingGames.length})
         </button>
       </div>
 
@@ -100,12 +102,10 @@ const Dashboard = () => {
           {myGames.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">🎯</div>
-              <h3 className="empty-title">No games yet</h3>
-              <p className="empty-text">
-                Create your first bingo game and invite friends to play!
-              </p>
+              <h3 className="empty-title">{t('dashboard.noGames.title')}</h3>
+              <p className="empty-text">{t('dashboard.noGames.text')}</p>
               <Link to="/create" className="btn btn-primary">
-                Create Your First Bingo
+                {t('dashboard.createFirst')}
               </Link>
             </div>
           ) : (
@@ -119,7 +119,7 @@ const Dashboard = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <h3 className="game-card-title">{game.title}</h3>
                     <span className={`game-card-badge ${game.isActive ? 'badge-active' : 'badge-inactive'}`}>
-                      {game.isActive ? 'Active' : 'Ended'}
+                      {game.isActive ? t('dashboard.active') : t('dashboard.ended')}
                     </span>
                   </div>
                   {game.description && (
@@ -129,7 +129,7 @@ const Dashboard = () => {
                   )}
                   <div className="game-card-meta">
                     <span>📐 {game.rows}×{game.cols}</span>
-                    <span>👥 {game.players?.length || 0} players</span>
+                    <span>👥 {game.players?.length || 0} {t('dashboard.players')}</span>
                   </div>
                   {game.players && game.players.length > 0 && (
                     <div className="game-card-players">
@@ -140,7 +140,7 @@ const Dashboard = () => {
                       </div>
                       {game.players.length > 5 && (
                         <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          +{game.players.length - 5} more
+                          {t('dashboard.morePlayers', { n: game.players.length - 5 })}
                         </span>
                       )}
                     </div>
@@ -157,12 +157,10 @@ const Dashboard = () => {
           {playingGames.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">🎮</div>
-              <h3 className="empty-title">Not playing any games</h3>
-              <p className="empty-text">
-                Join a bingo game using an invite link from a friend!
-              </p>
+              <h3 className="empty-title">{t('dashboard.noPlaying.title')}</h3>
+              <p className="empty-text">{t('dashboard.noPlaying.text')}</p>
               <button className="btn btn-primary" onClick={() => setJoinModalOpen(true)}>
-                Join a Game
+                {t('dashboard.joinGame')}
               </button>
             </div>
           ) : (
@@ -181,8 +179,8 @@ const Dashboard = () => {
                   )}
                   <div className="game-card-meta">
                     <span>📐 {game.rows}×{game.cols}</span>
-                    <span>👥 {game.players?.length || 0} players</span>
-                    <span>by {game.creator?.name}</span>
+                    <span>👥 {game.players?.length || 0} {t('dashboard.players')}</span>
+                    <span>{t('dashboard.by', { name: game.creator?.name })}</span>
                   </div>
                   {game.players && game.players.length > 0 && (
                     <div className="game-card-players">
@@ -205,20 +203,20 @@ const Dashboard = () => {
         <div className="modal-overlay" onClick={() => setJoinModalOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">Join a Bingo Game</h3>
+              <h3 className="modal-title">{t('dashboard.joinModal.title')}</h3>
               <button className="modal-close" onClick={() => setJoinModalOpen(false)}>×</button>
             </div>
             <form onSubmit={handleJoin}>
               <div className="modal-body">
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                  Enter the invite code shared by the game creator to join their bingo game.
+                  {t('dashboard.joinModal.description')}
                 </p>
                 <div className="form-group">
-                  <label className="form-label">Invite Code</label>
+                  <label className="form-label">{t('dashboard.joinModal.label')}</label>
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="e.g. A1B2C3D4"
+                    placeholder={t('dashboard.joinModal.placeholder')}
                     value={joinCode}
                     onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                     autoFocus
@@ -229,10 +227,10 @@ const Dashboard = () => {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setJoinModalOpen(false)}>
-                  Cancel
+                  {t('dashboard.joinModal.cancel')}
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={!joinCode.trim() || joining}>
-                  {joining ? 'Joining...' : '🎮 Join Game'}
+                  {joining ? t('dashboard.joinModal.joining') : t('dashboard.joinModal.submit')}
                 </button>
               </div>
             </form>

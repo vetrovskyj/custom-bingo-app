@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useLang } from '../context/LangContext';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
 const EditBingo = () => {
   const { id } = useParams();
+  const { t } = useLang();
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -27,7 +29,7 @@ const EditBingo = () => {
       const game = res.data.game;
 
       if (!res.data.isCreator) {
-        toast.error('Only the creator can edit this game');
+        toast.error(t('edit.error.notCreator'));
         navigate('/dashboard');
         return;
       }
@@ -40,7 +42,7 @@ const EditBingo = () => {
       setInviteEmails(game.invitedEmails?.join(', ') || '');
       setProofType(game.proofType || 'photo');
     } catch (error) {
-      toast.error('Failed to load game');
+      toast.error(t('edit.error.load'));
       navigate('/dashboard');
     } finally {
       setLoading(false);
@@ -74,12 +76,12 @@ const EditBingo = () => {
     e.preventDefault();
 
     if (!title.trim()) {
-      return toast.error('Please enter a title');
+      return toast.error(t('edit.error.title'));
     }
 
     const emptyCards = cards.filter(c => !c.text.trim());
     if (emptyCards.length > 0) {
-      return toast.error(`Please fill in all ${rows * cols} cards`);
+      return toast.error(t('edit.error.cards', { n: rows * cols }));
     }
 
     setSaving(true);
@@ -99,10 +101,10 @@ const EditBingo = () => {
         proofType,
       });
 
-      toast.success('Game updated!');
+      toast.success(t('edit.success'));
       navigate(`/manage/${id}`);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update game');
+      toast.error(error.response?.data?.message || t('edit.error.fail'));
     } finally {
       setSaving(false);
     }
@@ -116,17 +118,17 @@ const EditBingo = () => {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Edit Bingo</h1>
-          <p className="page-subtitle">Modify your bingo game settings and cards</p>
+          <h1 className="page-title">{t('edit.title')}</h1>
+          <p className="page-subtitle">{t('edit.subtitle')}</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="card" style={{ marginBottom: '1.5rem' }}>
-          <h3 className="card-title" style={{ marginBottom: '1rem' }}>Game Info</h3>
+          <h3 className="card-title" style={{ marginBottom: '1rem' }}>{t('edit.gameInfo')}</h3>
 
           <div className="form-group">
-            <label className="form-label">Title *</label>
+            <label className="form-label">{t('edit.titleLabel')}</label>
             <input
               type="text"
               className="form-input"
@@ -138,7 +140,7 @@ const EditBingo = () => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Description</label>
+            <label className="form-label">{t('edit.descLabel')}</label>
             <textarea
               className="form-input"
               value={description}
@@ -150,7 +152,7 @@ const EditBingo = () => {
 
           <div style={{ display: 'flex', gap: '1rem' }}>
             <div className="form-group" style={{ flex: 1 }}>
-              <label className="form-label">Rows</label>
+              <label className="form-label">{t('edit.rows')}</label>
               <select
                 className="form-input"
                 value={rows}
@@ -162,7 +164,7 @@ const EditBingo = () => {
               </select>
             </div>
             <div className="form-group" style={{ flex: 1 }}>
-              <label className="form-label">Columns</label>
+              <label className="form-label">{t('edit.cols')}</label>
               <select
                 className="form-input"
                 value={cols}
@@ -174,15 +176,15 @@ const EditBingo = () => {
               </select>
             </div>
             <div className="form-group" style={{ flex: 1 }}>
-              <label className="form-label">Proof Type</label>
+              <label className="form-label">{t('edit.proofType')}</label>
               <select
                 className="form-input"
                 value={proofType}
                 onChange={(e) => setProofType(e.target.value)}
               >
-                <option value="photo">📸 Photo</option>
-                <option value="text">📝 Text</option>
-                <option value="none">✅ None</option>
+                <option value="photo">{t('create.proofPhoto')}</option>
+                <option value="text">{t('create.proofText')}</option>
+                <option value="none">{t('create.proofNone')}</option>
               </select>
             </div>
           </div>
@@ -190,7 +192,7 @@ const EditBingo = () => {
 
         <div className="card" style={{ marginBottom: '1.5rem' }}>
           <h3 className="card-title" style={{ marginBottom: '1rem' }}>
-            Bingo Cards ({rows}×{cols})
+            {t('edit.cardsTitle', { rows, cols })}
           </h3>
 
           <div
@@ -213,7 +215,7 @@ const EditBingo = () => {
                     textAlign: 'center',
                     outline: 'none',
                   }}
-                  placeholder={`Card ${index + 1}`}
+                  placeholder={t('create.cardPlaceholder', { n: index + 1 })}
                   value={card.text}
                   onChange={(e) => updateCardText(index, e.target.value)}
                   maxLength={200}
@@ -221,7 +223,7 @@ const EditBingo = () => {
                 {expandedDesc === index ? (
                   <textarea
                     className="card-description-input"
-                    placeholder="Description (optional)"
+                    placeholder={t('create.descInputPlaceholder')}
                     value={card.description}
                     onChange={(e) => updateCardDescription(index, e.target.value)}
                     maxLength={500}
@@ -235,7 +237,7 @@ const EditBingo = () => {
                     className="card-description-toggle"
                     onClick={() => setExpandedDesc(index)}
                   >
-                    {card.description ? '📝 desc' : '+ desc'}
+                    {card.description ? t('create.descToggleFilled') : t('create.descToggle')}
                   </button>
                 )}
               </div>
@@ -244,13 +246,13 @@ const EditBingo = () => {
         </div>
 
         <div className="card" style={{ marginBottom: '1.5rem' }}>
-          <h3 className="card-title" style={{ marginBottom: '1rem' }}>Invite Players</h3>
+          <h3 className="card-title" style={{ marginBottom: '1rem' }}>{t('edit.inviteTitle')}</h3>
 
           <div className="form-group">
-            <label className="form-label">Email Addresses</label>
+            <label className="form-label">{t('edit.inviteLabel')}</label>
             <textarea
               className="form-input"
-              placeholder="friend1@email.com, friend2@email.com"
+              placeholder={t('edit.invitePlaceholder')}
               value={inviteEmails}
               onChange={(e) => setInviteEmails(e.target.value)}
               rows={3}
@@ -264,14 +266,14 @@ const EditBingo = () => {
             className="btn btn-secondary"
             onClick={() => navigate(`/manage/${id}`)}
           >
-            Cancel
+            {t('edit.cancel')}
           </button>
           <button
             type="submit"
             className="btn btn-primary btn-lg"
             disabled={saving}
           >
-            {saving ? 'Saving...' : '💾 Save Changes'}
+            {saving ? t('edit.saving') : t('edit.submit')}
           </button>
         </div>
       </form>

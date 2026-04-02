@@ -1,11 +1,13 @@
 import { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LangContext';
 import api from '../api/axios';
 import Avatar from '../components/Avatar';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
   const { user, updateUser } = useAuth();
+  const { t } = useLang();
   const [name, setName] = useState(user?.name || '');
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(null);
@@ -15,7 +17,7 @@ const Profile = () => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('File must be less than 5MB');
+        toast.error(t('profile.fileTooLarge'));
         return;
       }
       const reader = new FileReader();
@@ -40,9 +42,9 @@ const Profile = () => {
 
       updateUser(res.data.user);
       setPreview(null);
-      toast.success('Profile updated!');
+      toast.success(t('profile.success'));
     } catch (error) {
-      toast.error('Failed to update profile');
+      toast.error(t('profile.error'));
     } finally {
       setSaving(false);
     }
@@ -51,8 +53,8 @@ const Profile = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1 className="auth-title">Profile</h1>
-        <p className="auth-subtitle">Update your profile information</p>
+        <h1 className="auth-title">{t('profile.title')}</h1>
+        <p className="auth-subtitle">{t('profile.subtitle')}</p>
 
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
@@ -94,7 +96,7 @@ const Profile = () => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Full Name</label>
+            <label className="form-label">{t('profile.fullName')}</label>
             <input
               type="text"
               className="form-input"
@@ -106,7 +108,7 @@ const Profile = () => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Email</label>
+            <label className="form-label">{t('profile.email')}</label>
             <input
               type="email"
               className="form-input"
@@ -115,7 +117,7 @@ const Profile = () => {
               style={{ opacity: 0.6 }}
             />
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-              Email cannot be changed
+              {t('profile.emailNote')}
             </p>
           </div>
 
@@ -125,7 +127,7 @@ const Profile = () => {
             disabled={saving}
             style={{ marginTop: '0.5rem' }}
           >
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? t('profile.saving') : t('profile.save')}
           </button>
         </form>
       </div>

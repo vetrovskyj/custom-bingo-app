@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LangContext';
 import toast from 'react-hot-toast';
 
 const Register = () => {
   const { register } = useAuth();
+  const { t } = useLang();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,21 +17,21 @@ const Register = () => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error(t('register.passwordMismatch'));
       return;
     }
 
     if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+      toast.error(t('register.passwordShort'));
       return;
     }
 
     setLoading(true);
     try {
       await register(name, email, password);
-      toast.success('Account created successfully!');
+      toast.success(t('register.success'));
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Registration failed');
+      toast.error(error.response?.data?.message || t('register.error'));
     } finally {
       setLoading(false);
     }
@@ -38,16 +40,16 @@ const Register = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1 className="auth-title">Create Account</h1>
-        <p className="auth-subtitle">Join Custom Bingo and start playing</p>
+        <h1 className="auth-title">{t('register.title')}</h1>
+        <p className="auth-subtitle">{t('register.subtitle')}</p>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Full Name</label>
+            <label className="form-label">{t('register.fullName')}</label>
             <input
               type="text"
               className="form-input"
-              placeholder="John Doe"
+              placeholder={t('register.namePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -56,11 +58,11 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Email</label>
+            <label className="form-label">{t('login.email')}</label>
             <input
               type="email"
               className="form-input"
-              placeholder="you@example.com"
+              placeholder={t('register.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -68,11 +70,11 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Password</label>
+            <label className="form-label">{t('login.password')}</label>
             <input
               type="password"
               className="form-input"
-              placeholder="At least 6 characters"
+              placeholder={t('register.passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -81,11 +83,11 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Confirm Password</label>
+            <label className="form-label">{t('register.confirmPassword')}</label>
             <input
               type="password"
               className="form-input"
-              placeholder="Repeat your password"
+              placeholder={t('register.confirmPlaceholder')}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
@@ -98,12 +100,12 @@ const Register = () => {
             disabled={loading}
             style={{ marginTop: '0.5rem' }}
           >
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? t('register.creating') : t('register.submit')}
           </button>
         </form>
 
         <p className="auth-footer">
-          Already have an account? <Link to="/login">Sign In</Link>
+          {t('register.hasAccount')} <Link to="/login">{t('register.signIn')}</Link>
         </p>
       </div>
     </div>

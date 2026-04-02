@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LangContext';
 import toast from 'react-hot-toast';
 
 const Login = () => {
   const { login } = useAuth();
+  const { t } = useLang();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,9 +16,9 @@ const Login = () => {
     setLoading(true);
     try {
       await login(email, password);
-      toast.success('Welcome back!');
+      toast.success(t('login.success'));
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      toast.error(error.response?.data?.message || t('login.error'));
     } finally {
       setLoading(false);
     }
@@ -25,16 +27,16 @@ const Login = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1 className="auth-title">Welcome Back</h1>
-        <p className="auth-subtitle">Sign in to continue to Custom Bingo</p>
+        <h1 className="auth-title">{t('login.title')}</h1>
+        <p className="auth-subtitle">{t('login.subtitle')}</p>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Email</label>
+            <label className="form-label">{t('login.email')}</label>
             <input
               type="email"
               className="form-input"
-              placeholder="you@example.com"
+              placeholder={t('register.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -42,7 +44,7 @@ const Login = () => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Password</label>
+            <label className="form-label">{t('login.password')}</label>
             <input
               type="password"
               className="form-input"
@@ -54,7 +56,7 @@ const Login = () => {
           </div>
 
           <Link to="/forgot-password" className="auth-link">
-            Forgot your password?
+            {t('login.forgotPassword')}
           </Link>
 
           <button
@@ -63,12 +65,12 @@ const Login = () => {
             disabled={loading}
             style={{ marginTop: '1.5rem' }}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? t('login.signingIn') : t('login.signIn')}
           </button>
         </form>
 
         <p className="auth-footer">
-          Don't have an account? <Link to="/register">Sign Up</Link>
+          {t('login.noAccount')} <Link to="/register">{t('login.signUp')}</Link>
         </p>
       </div>
     </div>
