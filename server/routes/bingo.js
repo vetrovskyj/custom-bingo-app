@@ -7,6 +7,18 @@ const upload = require('../middleware/upload');
 
 const router = express.Router();
 
+const handleUpload = (req, res, next) => {
+  upload.single('photo')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ message: 'Photo exceeds the maximum allowed size (15MB).' });
+      }
+      return res.status(400).json({ message: err.message || 'File upload failed.' });
+    }
+    next();
+  });
+};
+
 // POST /api/bingo - Create a new bingo game
 router.post('/', auth, async (req, res) => {
   try {
@@ -236,7 +248,7 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // POST /api/bingo/:id/fulfill/:cardIndex - Fulfill a card with proof
-router.post('/:id/fulfill/:cardIndex', auth, upload.single('photo'), async (req, res) => {
+router.post('/:id/fulfill/:cardIndex', auth, handleUpload, async (req, res) => {
   try {
     const game = await BingoGame.findById(req.params.id);
     if (!game) {
