@@ -1,11 +1,25 @@
+const fs = require('fs');
+const path = require('path');
 const multer = require('multer');
 
-// Store files in memory so we can convert them to base64 data URIs
-const storage = multer.memoryStorage();
+const uploadDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const random = Math.random().toString(16).slice(2);
+    const extension = path.extname(file.originalname);
+    cb(null, `${timestamp}-${random}${extension}`);
+  },
+});
 
 const upload = multer({
   storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB limit
   fileFilter: (req, file, cb) => {
     const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (allowedMimes.includes(file.mimetype)) {
@@ -15,14 +29,5 @@ const upload = multer({
     }
   },
 });
-
-/**
- * Convert a multer memory file to a base64 data URI string.
- */
-upload.toDataURI = (file) => {
-  if (!file || !file.buffer) return null;
-  const base64 = file.buffer.toString('base64');
-  return `data:${file.mimetype};base64,${base64}`;
-};
 
 module.exports = upload;

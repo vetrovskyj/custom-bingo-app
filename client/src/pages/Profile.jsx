@@ -16,7 +16,7 @@ const Profile = () => {
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > 25 * 1024 * 1024) {
         toast.error(t('profile.fileTooLarge'));
         return;
       }
@@ -36,9 +36,7 @@ const Profile = () => {
         formData.append('profilePicture', fileInputRef.current.files[0]);
       }
 
-      const res = await api.put('/auth/profile', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const res = await api.put('/auth/profile', formData);
 
       updateUser(res.data.user);
       setPreview(null);

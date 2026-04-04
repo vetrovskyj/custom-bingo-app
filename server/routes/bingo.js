@@ -11,7 +11,7 @@ const handleUpload = (req, res, next) => {
   upload.single('photo')(req, res, (err) => {
     if (err) {
       if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(413).json({ message: 'Photo exceeds the maximum allowed size (15MB).' });
+        return res.status(413).json({ message: 'Photo exceeds the maximum allowed size (25MB).' });
       }
       return res.status(400).json({ message: err.message || 'File upload failed.' });
     }
@@ -280,7 +280,7 @@ router.post('/:id/fulfill/:cardIndex', auth, handleUpload, async (req, res) => {
       if (!req.file) {
         return res.status(400).json({ message: 'Photo is required' });
       }
-      photoDataURI = upload.toDataURI(req.file);
+      photoDataURI = `/uploads/${req.file.filename}`;
     } else if (game.proofType === 'text') {
       textProof = req.body.textProof || '';
       if (!textProof.trim()) {

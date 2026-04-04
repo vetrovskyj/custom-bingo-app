@@ -38,7 +38,7 @@ const PlayBingo = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 15 * 1024 * 1024) {
+      if (file.size > 25 * 1024 * 1024) {
         toast.error(t('play.fileTooLarge'));
         return;
       }
@@ -62,9 +62,7 @@ const PlayBingo = () => {
       if (proofType === 'photo') {
         const formData = new FormData();
         formData.append('photo', selectedFile);
-        const res = await api.post(`/bingo/${id}/fulfill/${selectedCard}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const res = await api.post(`/bingo/${id}/fulfill/${selectedCard}`, formData);
         setGame(res.data.game);
       } else if (proofType === 'text') {
         const res = await api.post(`/bingo/${id}/fulfill/${selectedCard}`, { textProof });

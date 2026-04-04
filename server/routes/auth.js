@@ -89,11 +89,14 @@ router.put('/profile', auth, upload.single('profilePicture'), async (req, res) =
   try {
     const updates = {};
     if (req.body.name) updates.name = req.body.name;
-    if (req.file) updates.profilePicture = upload.toDataURI(req.file);
+    if (req.file) updates.profilePicture = `/uploads/${req.file.filename}`;
 
     const user = await User.findByIdAndUpdate(req.userId, updates, { new: true });
     res.json({ user: user.toJSON() });
   } catch (error) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ message: 'Profile photo exceeds the maximum allowed size (25MB).' });
+    }
     console.error('Profile update error:', error);
     res.status(500).json({ message: 'Server error' });
   }
