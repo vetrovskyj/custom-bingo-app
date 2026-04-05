@@ -8,17 +8,29 @@ const resolveBaseURL = () => {
 
 const api = axios.create({
   baseURL: resolveBaseURL(),
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
-// Add token to every request
+// Add token to every request and set content type for JSON requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
+    config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  if (config.data instanceof FormData) {
+    // Let the browser set the multipart boundary header for FormData uploads
+    if (config.headers) {
+      delete config.headers['Content-Type'];
+      delete config.headers['content-type'];
+    }
+  } else {
+    config.headers = config.headers || {};
+    if (!config.headers['Content-Type'] && !config.headers['content-type']) {
+      config.headers['Content-Type'] = 'application/json';
+    }
+  }
+
   return config;
 });
 

@@ -19,6 +19,53 @@ const PlayBingo = () => {
   const [uploading, setUploading] = useState(false);
   const [isCreator, setIsCreator] = useState(false);
 
+  const compressImageFile = async (file, maxDimension = 1280, quality = 0.75) => {
+    if (!file || !file.type.startsWith('image/')) return file;
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height && width > maxDimension) {
+            height *= maxDimension / width;
+            width = maxDimension;
+          } else if (height > width && height > maxDimension) {
+            width *= maxDimension / height;
+            height = maxDimension;
+          } else if (width === height && width > maxDimension) {
+            width = maxDimension;
+            height = maxDimension;
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                return reject(new Error('Image compression failed'));
+              }
+              resolve(new File([blob], file.name, { type: file.type }));
+            },
+            file.type,
+            quality
+          );
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const fetchGame = useCallback(async () => {
     try {
       const res = await api.get(`/bingo/${id}`);
@@ -60,8 +107,17 @@ const PlayBingo = () => {
     setUploading(true);
     try {
       if (proofType === 'photo') {
+        let uploadFile = selectedFile;
+        if (selectedFile.size > 3 * 1024 * 1024) {
+          uploadFile = await compressImageFile(selectedFile);
+        }
+
+        if (uploadFile.size > 15 * 1024 * 1024) {
+          throw new Error(t('play.fileTooLarge'));
+        }
+
         const formData = new FormData();
-        formData.append('photo', selectedFile);
+        formData.append('photo', uploadFile);
         const res = await api.post(`/bingo/${id}/fulfill/${selectedCard}`, formData);
         setGame(res.data.game);
       } else if (proofType === 'text') {
@@ -459,6 +515,7 @@ const PlayBingo = () => {
                   <label className={`upload-area ${selectedFile ? 'has-file' : ''}`}>
                     <input
                       type="file"
+                      name="photo"
                       accept="image/jpeg,image/png,image/gif,image/webp"
                       onChange={handleFileChange}
                       style={{ display: 'none' }}
