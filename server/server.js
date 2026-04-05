@@ -76,7 +76,26 @@ app.use('/api/bingo', require('./routes/bingo'));
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  const uploadsPath = path.join(__dirname, 'uploads');
+  const uploadsExist = fs.existsSync(uploadsPath);
+  let uploadedFiles = 0;
+  
+  if (uploadsExist) {
+    try {
+      uploadedFiles = fs.readdirSync(uploadsPath).length;
+    } catch (e) {
+      // ignore
+    }
+  }
+  
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uploads: {
+      directoryExists: uploadsExist,
+      fileCount: uploadedFiles,
+    },
+  });
 });
 
 const PORT = process.env.PORT || 5000;

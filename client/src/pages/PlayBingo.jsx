@@ -131,7 +131,9 @@ const PlayBingo = () => {
       toast.success(proofType === 'none' ? t('play.success.none') : t('play.success.proof'));
       closeModal();
     } catch (error) {
-      toast.error(error.response?.data?.message || t('play.error.submit'));
+      const errorMsg = error.response?.data?.message || error.message || t('play.error.submit');
+      console.error('Upload error:', errorMsg, error);
+      toast.error(errorMsg);
     } finally {
       setUploading(false);
     }

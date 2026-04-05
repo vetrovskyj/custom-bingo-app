@@ -315,7 +315,16 @@ router.post('/:id/fulfill/:cardIndex', auth, handleUpload, async (req, res) => {
     res.json({ game });
   } catch (error) {
     console.error('Fulfill card error:', error);
-    res.status(500).json({ message: 'Server error' });
+
+    if (error.name === 'MongoServerError' && error.code === 16402) {
+      return res.status(413).json({ message: 'Game data too large. Please upload a smaller photo or remove old fulfillments.' });
+    }
+
+    if (error.message && error.message.includes('ENOSPC')) {
+      return res.status(507).json({ message: 'Server storage full. Please try again later.' });
+    }
+
+    res.status(500).json({ message: 'Server error while saving fulfillment' });
   }
 });
 
