@@ -1,24 +1,7 @@
-const fs = require('fs');
-const path = require('path');
 const multer = require('multer');
 
-const uploadDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const timestamp = Date.now();
-    const random = Math.random().toString(16).slice(2);
-    const extension = path.extname(file.originalname);
-    cb(null, `${timestamp}-${random}${extension}`);
-  },
-});
-
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024 }, // 25MB limit
   fileFilter: (req, file, cb) => {
     const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -30,4 +13,19 @@ const upload = multer({
   },
 });
 
-module.exports = upload;
+const handleUpload = (uploadMiddleware, req, res, next) => {
+  uploadMiddleware(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ message: 'Photo exceeds the maximum allowed size (25MB).' });
+      }
+      return res.status(400).json({ message: err.message || 'File upload failed.' });
+    }
+    return next();
+  });
+};
+
+module.exports = {
+  upload,
+  handleUpload,
+};

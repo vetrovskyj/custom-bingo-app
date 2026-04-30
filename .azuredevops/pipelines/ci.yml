@@ -1,0 +1,48 @@
+trigger:
+- main
+
+pr:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- stage: CI
+  displayName: Build and test
+  jobs:
+  - job: client
+    displayName: Client checks
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '20.x'
+      displayName: Use Node.js 20
+
+    - script: npm ci
+      displayName: Install client dependencies
+      workingDirectory: client
+
+    - script: npm run build
+      displayName: Build client
+      workingDirectory: client
+
+    - script: npm run test:unit
+      displayName: Run client unit tests
+      workingDirectory: client
+
+  - job: server
+    displayName: Server checks
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '20.x'
+      displayName: Use Node.js 20
+
+    - script: npm ci
+      displayName: Install server dependencies
+      workingDirectory: server
+
+    - script: node --check server.js && node --check routes/auth.js && node --check routes/bingo.js
+      displayName: Validate server syntax
+      workingDirectory: server

@@ -3,7 +3,8 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-const upload = require('../middleware/upload');
+const { upload, handleUpload } = require('../middleware/upload');
+const { storeUploadedImage } = require('../services/mediaStorage');
 
 const router = express.Router();
 
@@ -85,21 +86,22 @@ router.get('/me', auth, async (req, res) => {
 });
 
 // PUT /api/auth/profile
-router.put('/profile', auth, upload.single('profilePicture'), async (req, res) => {
-  try {
-    const updates = {};
-    if (req.body.name) updates.name = req.body.name;
-    if (req.file) updates.profilePicture = `/uploads/${req.file.filename}`;
+router.put('/profile', auth, (req, res) => {
+  handleUpload(upload.single('profilePicture'), req, res, async () => {
+    try {
+      const updates = {};
+      if (req.body.name) updates.name = req.body.name;
+      if (req.file) {
+        updates.profilePicture = await storeUploadedImage(req.file, { folder: 'profiles' });
+      }
 
-    const user = await User.findByIdAndUpdate(req.userId, updates, { new: true });
-    res.json({ user: user.toJSON() });
-  } catch (error) {
-    if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(413).json({ message: 'Profile photo exceeds the maximum allowed size (25MB).' });
+      const user = await User.findByIdAndUpdate(req.userId, updates, { new: true });
+      res.json({ user: user.toJSON() });
+    } catch (error) {
+      console.error('Profile update error:', error);
+      res.status(500).json({ message: 'Server error' });
     }
-    console.error('Profile update error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+  });
 });
 
 // POST /api/auth/forgot-password

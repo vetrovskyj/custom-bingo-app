@@ -1,0 +1,5 @@
+# Bootstrap pipeline file for Azure DevOps.
+# This delegates to the deploy pipeline in .azuredevops/pipelines/cd.yml.
+
+extends:
+  template: .azuredevops/pipelines/cd.yml

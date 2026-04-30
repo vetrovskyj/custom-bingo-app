@@ -3,21 +3,10 @@ const { v4: uuidv4 } = require('uuid');
 const BingoGame = require('../models/BingoGame');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-const upload = require('../middleware/upload');
+const { upload, handleUpload } = require('../middleware/upload');
+const { storeUploadedImage } = require('../services/mediaStorage');
 
 const router = express.Router();
-
-const handleUpload = (req, res, next) => {
-  upload.single('photo')(req, res, (err) => {
-    if (err) {
-      if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(413).json({ message: 'Photo exceeds the maximum allowed size (25MB).' });
-      }
-      return res.status(400).json({ message: err.message || 'File upload failed.' });
-    }
-    next();
-  });
-};
 
 // POST /api/bingo - Create a new bingo game
 router.post('/', auth, async (req, res) => {
@@ -104,23 +93,28 @@ router.get('/playing', auth, async (req, res) => {
 // GET /api/bingo/join/:inviteCode - Join a bingo game
 router.get('/join/:inviteCode', auth, async (req, res) => {
   try {
-    const game = await BingoGame.findOne({ inviteCode: req.params.inviteCode })
+    const gameStatus = await BingoGame.findOne({ inviteCode: req.params.inviteCode })
+      .select('_id isActive')
+      .lean();
+
+    if (!gameStatus) {
+      return res.status(404).json({ message: 'Game not found' });
+    }
+
+    if (!gameStatus.isActive) {
+      return res.status(400).json({ message: 'This game is no longer active' });
+    }
+
+    const game = await BingoGame.findOneAndUpdate(
+      { _id: gameStatus._id, isActive: true },
+      { $addToSet: { players: req.userId } },
+      { new: true }
+    )
       .populate('creator', 'name email profilePicture')
       .populate('players', 'name email profilePicture');
 
     if (!game) {
-      return res.status(404).json({ message: 'Game not found' });
-    }
-
-    if (!game.isActive) {
       return res.status(400).json({ message: 'This game is no longer active' });
-    }
-
-    // Add player if not already in the game
-    if (!game.players.some(p => p._id.toString() === req.userId.toString())) {
-      game.players.push(req.userId);
-      await game.save();
-      await game.populate('players', 'name email profilePicture');
     }
 
     res.json({ game });
@@ -248,7 +242,9 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // POST /api/bingo/:id/fulfill/:cardIndex - Fulfill a card with proof
-router.post('/:id/fulfill/:cardIndex', auth, handleUpload, async (req, res) => {
+router.post('/:id/fulfill/:cardIndex', auth, (req, res, next) => {
+  handleUpload(upload.single('photo'), req, res, next);
+}, async (req, res) => {
   try {
     const game = await BingoGame.findById(req.params.id);
     if (!game) {
@@ -280,7 +276,7 @@ router.post('/:id/fulfill/:cardIndex', auth, handleUpload, async (req, res) => {
       if (!req.file) {
         return res.status(400).json({ message: 'Photo is required' });
       }
-      photoDataURI = `/uploads/${req.file.filename}`;
+      photoDataURI = await storeUploadedImage(req.file, { folder: 'fulfillments' });
     } else if (game.proofType === 'text') {
       textProof = req.body.textProof || '';
       if (!textProof.trim()) {

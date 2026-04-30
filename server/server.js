@@ -2,8 +2,8 @@ require('dotenv').config();
 const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const connectDB = require('./config/db');
+const { LOCAL_UPLOADS_DIR, ensureLocalUploadsDir } = require('./services/mediaStorage');
 
 const app = express();
 
@@ -36,7 +36,12 @@ const resolveAllowedOrigins = () => {
 };
 
 const allowedOrigins = resolveAllowedOrigins();
-console.log('CORS allowed origins:', allowedOrigins.length ? allowedOrigins : '(none — all origins allowed)');
+const isProduction = process.env.NODE_ENV === 'production';
+console.log('CORS allowed origins:', allowedOrigins.length ? allowedOrigins : '(none configured)');
+
+if (isProduction && allowedOrigins.length === 0) {
+  console.warn('CORS is in fail-closed mode: no ALLOWED_ORIGINS configured for production.');
+}
 
 // Middleware
 app.use(
@@ -45,8 +50,13 @@ app.use(
       // Allow requests with no origin (server-to-server, curl, health checks)
       if (!origin) return callback(null, true);
 
-      // If no origins configured, allow everything
-      if (allowedOrigins.length === 0) return callback(null, true);
+      // In production, fail closed when no origins are configured.
+      if (allowedOrigins.length === 0) {
+        if (isProduction) {
+          return callback(null, false);
+        }
+        return callback(null, true);
+      }
 
       const normalizedOrigin = normalizeOrigin(origin);
       if (allowedOrigins.includes(normalizedOrigin)) {
@@ -64,11 +74,8 @@ app.use(
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
-const uploadsPath = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsPath)) {
-  fs.mkdirSync(uploadsPath, { recursive: true });
-}
-app.use('/uploads', express.static(uploadsPath));
+ensureLocalUploadsDir();
+app.use('/uploads', express.static(LOCAL_UPLOADS_DIR));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -76,13 +83,12 @@ app.use('/api/bingo', require('./routes/bingo'));
 
 // Health check
 app.get('/api/health', (req, res) => {
-  const uploadsPath = path.join(__dirname, 'uploads');
-  const uploadsExist = fs.existsSync(uploadsPath);
+  const uploadsExist = fs.existsSync(LOCAL_UPLOADS_DIR);
   let uploadedFiles = 0;
   
   if (uploadsExist) {
     try {
-      uploadedFiles = fs.readdirSync(uploadsPath).length;
+      uploadedFiles = fs.readdirSync(LOCAL_UPLOADS_DIR).length;
     } catch (e) {
       // ignore
     }

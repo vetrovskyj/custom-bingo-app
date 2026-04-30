@@ -1,0 +1,124 @@
+trigger:
+- main
+
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  nodeVersion: '20.x'
+
+  # Service connection names (set these in Azure DevOps project settings)
+  azureServiceConnection: 'sc-azure-bingo-dev'
+  acrServiceConnection: 'sc-acr-bingo-dev'
+
+  # Infrastructure names
+  resourceGroup: 'rg-bingo-dev-we'
+  containerAppName: 'ca-bingo-api-dev-we'
+  acrLoginServer: 'acrbingodevwe.azurecr.io'
+  imageRepository: 'custom-bingo-api'
+
+stages:
+- stage: Validate
+  displayName: Validate before deploy
+  jobs:
+  - job: client
+    displayName: Client checks
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '$(nodeVersion)'
+      displayName: Use Node.js $(nodeVersion)
+
+    - script: npm ci
+      displayName: Install client dependencies
+      workingDirectory: client
+
+    - script: npm run build
+      displayName: Build client
+      workingDirectory: client
+
+    - script: npm run test:unit
+      displayName: Run client unit tests
+      workingDirectory: client
+
+  - job: server
+    displayName: Server checks
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '$(nodeVersion)'
+      displayName: Use Node.js $(nodeVersion)
+
+    - script: npm ci
+      displayName: Install server dependencies
+      workingDirectory: server
+
+    - script: node --check server.js && node --check routes/auth.js && node --check routes/bingo.js
+      displayName: Validate server syntax
+      workingDirectory: server
+
+- stage: DeployApi
+  displayName: Deploy backend to Container Apps
+  dependsOn: Validate
+  jobs:
+  - job: deploy_backend
+    displayName: Build and deploy API
+    steps:
+    - task: Docker@2
+      displayName: Build and push API image
+      inputs:
+        command: buildAndPush
+        containerRegistry: '$(acrServiceConnection)'
+        repository: '$(imageRepository)'
+        dockerfile: 'server/Dockerfile'
+        buildContext: 'server'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+    - task: AzureCLI@2
+      displayName: Update Container App image and env
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az containerapp update \
+            --name "$(containerAppName)" \
+            --resource-group "$(resourceGroup)" \
+            --image "$(acrLoginServer)/$(imageRepository):$(Build.BuildId)" \
+            --set-env-vars \
+              PORT=5000 \
+              NODE_ENV=production \
+              MONGODB_URI="$(MONGODB_URI)" \
+              JWT_SECRET="$(JWT_SECRET)" \
+              CLIENT_URL="$(CLIENT_URL)" \
+              ALLOWED_ORIGINS="$(ALLOWED_ORIGINS)" \
+              SMTP_HOST="$(SMTP_HOST)" \
+              SMTP_PORT="$(SMTP_PORT)" \
+              SMTP_USER="$(SMTP_USER)" \
+              SMTP_PASS="$(SMTP_PASS)" \
+              AZURE_STORAGE_CONNECTION_STRING="$(AZURE_STORAGE_CONNECTION_STRING)" \
+              AZURE_STORAGE_CONTAINER_NAME="$(AZURE_STORAGE_CONTAINER_NAME)" \
+              AZURE_STORAGE_PUBLIC_BASE_URL="$(AZURE_STORAGE_PUBLIC_BASE_URL)"
+
+- stage: DeployWeb
+  displayName: Deploy frontend to Static Web Apps
+  dependsOn: Validate
+  jobs:
+  - job: deploy_frontend
+    displayName: Deploy web app
+    steps:
+    - task: AzureStaticWebApp@0
+      displayName: Deploy to Static Web Apps
+      inputs:
+        app_location: 'client'
+        output_location: 'dist'
+        app_build_command: 'npm run build'
+        skip_api_build: true
+        is_static_export: true
+      env:
+        azure_static_web_apps_api_token: '$(AZURE_STATIC_WEB_APPS_API_TOKEN)'
+        VITE_API_BASE_URL: '$(VITE_API_BASE_URL)'

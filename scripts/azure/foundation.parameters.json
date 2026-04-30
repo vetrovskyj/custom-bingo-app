@@ -1,0 +1,17 @@
+{
+  "subscriptionId": "a39305d8-f604-4687-b683-f20b4835e3e1",
+  "resourceGroupName": "rg-bingo-dev-we",
+  "location": "westeurope",
+  "staticWebAppName": "swa-bingo-a39305",
+  "containerAppEnvironmentName": "cae-bingo-dev-we",
+  "containerAppName": "ca-bingo-api-dev-we",
+  "acrName": "acrbingoa39305",
+  "storageAccountName": "stbingoa39305",
+  "blobContainerName": "media",
+  "appInsightsName": "appi-bingo-api-dev-we",
+  "tags": {
+    "app": "custom-bingo",
+    "environment": "dev",
+    "managedBy": "azure-cli"
+  }
+}
