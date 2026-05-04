@@ -16,7 +16,7 @@ variables:
   # Infrastructure names
   resourceGroup: 'rg-bingo-dev-we'
   containerAppName: 'ca-bingo-api-dev-we'
-  acrLoginServer: 'acrbingodevwe.azurecr.io'
+  acrLoginServer: 'acrbingoa39305.azurecr.io'
   imageRepository: 'custom-bingo-api'
 
 stages:
