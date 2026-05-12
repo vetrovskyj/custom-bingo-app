@@ -246,7 +246,7 @@ if (-not $containerAppExists) {
     '--resource-group', $resourceGroupName,
     '--server', $acrLoginServer,
     '--username', $acrUsername,
-    '--password-secret-ref', 'acr-password'
+    '--password', $acrPassword
   )
 
   Invoke-AzCli -Arguments (@(

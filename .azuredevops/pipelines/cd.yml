@@ -7,17 +7,25 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  nodeVersion: '20.x'
+- group: bingo-prod
+- name: nodeVersion
+  value: '20.x'
 
-  # Service connection names (set these in Azure DevOps project settings)
-  azureServiceConnection: 'sc-azure-bingo-dev'
-  acrServiceConnection: 'sc-acr-bingo-dev'
+# Service connection names (set these in Azure DevOps project settings)
+- name: azureServiceConnection
+  value: 'sc-azure-bingo-dev'
+- name: acrServiceConnection
+  value: 'sc-acr-bingo-dev'
 
-  # Infrastructure names
-  resourceGroup: 'rg-bingo-dev-we'
-  containerAppName: 'ca-bingo-api-dev-we'
-  acrLoginServer: 'acrbingoa39305.azurecr.io'
-  imageRepository: 'custom-bingo-api'
+# Infrastructure names
+- name: resourceGroup
+  value: 'rg-bingo-dev-we'
+- name: containerAppName
+  value: 'ca-bingo-api-dev-we'
+- name: acrLoginServer
+  value: 'acrbingoa39305.azurecr.io'
+- name: imageRepository
+  value: 'custom-bingo-api'
 
 stages:
 - stage: Validate

@@ -219,6 +219,52 @@ Make sure `CLIENT_URL` and `ALLOWED_ORIGINS` match the real Static Web App hostn
 
 Check Atlas network access and credentials. The backend currently resolves DNS with IPv4-first to avoid broken IPv6 paths.
 
+## Credential rotation and incident response
+
+Rotate immediately if any secret is shared in chat, terminal output, screenshots, or committed by mistake.
+
+### What to rotate
+
+1. Azure DevOps PAT used for automation
+2. SMTP app password
+3. JWT secret
+4. MongoDB password (if exposed)
+5. Static Web Apps deployment token (if exposed)
+
+### Where to rotate
+
+1. Azure DevOps PAT:
+	- Azure DevOps -> User settings -> Personal access tokens
+2. SMTP app password (Gmail):
+	- Google Account -> Security -> App passwords
+3. MongoDB password:
+	- MongoDB Atlas -> Database Access -> Edit user
+4. Static Web Apps deployment token:
+	- Azure Portal -> Static Web App -> Manage deployment token
+
+### Safe post-rotation command flow
+
+Run from repo root after updating your new secret values:
+
+```powershell
+$env:MONGODB_URI = '<new-or-current-mongodb-uri>'
+$env:JWT_SECRET = '<new-jwt-secret>'
+$env:SMTP_USER = '<smtp-user>'
+$env:SMTP_PASS = '<new-smtp-app-password>'
+$env:AZURE_DEVOPS_EXT_PAT = '<new-azure-devops-pat>'
+
+powershell -ExecutionPolicy Bypass -File .\scripts\azure\Deploy-App.ps1 -ConfigPath .\scripts\azure\appsettings.parameters.json
+powershell -ExecutionPolicy Bypass -File .\scripts\azure\Set-AzureDevOpsVariables.ps1 -OrganizationUrl 'https://dev.azure.com/<org>' -Project '<project>'
+powershell -ExecutionPolicy Bypass -File .\scripts\azure\Validate-AzureSetup.ps1 -ConfigPath .\scripts\azure\appsettings.parameters.json
+```
+
+### Guardrails
+
+1. Do not store live secrets in tracked JSON files.
+2. Keep secrets in environment variables, Azure DevOps secret variables, or Key Vault.
+3. Never paste secrets into PR descriptions, issues, or commit messages.
+4. If a secret appears in git history, rotate it first, then clean history only if required by policy.
+
 ## Azure DevOps variables to set
 
 Secret variables:
