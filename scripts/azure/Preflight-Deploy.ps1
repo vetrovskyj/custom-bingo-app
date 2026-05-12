@@ -26,8 +26,43 @@ function Test-AzResource {
     [string[]]$Arguments
   )
 
-  & $script:AzPath @Arguments 2>$null | Out-Null
-  return ($LASTEXITCODE -eq 0)
+  $previousPreference = $ErrorActionPreference
+  try {
+    $ErrorActionPreference = 'Continue'
+    & $script:AzPath @Arguments *> $null
+    return ($LASTEXITCODE -eq 0)
+  } catch {
+    return $false
+  } finally {
+    $ErrorActionPreference = $previousPreference
+  }
+}
+
+function Get-TrimmedValue {
+  param([object]$Value)
+
+  if ($null -eq $Value) {
+    return ''
+  }
+
+  return ([string]$Value).Trim()
+}
+
+function Has-ConfigOrEnvValue {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$ConfigName,
+    [Parameter(Mandatory = $true)]
+    [string]$EnvName
+  )
+
+  $configValue = Get-TrimmedValue -Value $config.$ConfigName
+  if ($configValue) {
+    return $true
+  }
+
+  $envValue = Get-TrimmedValue -Value ([Environment]::GetEnvironmentVariable($EnvName))
+  return [bool]$envValue
 }
 
 if (-not (Test-Path $ConfigPath)) {
@@ -53,7 +88,11 @@ $checks += [PSCustomObject]@{
 }
 
 if ($dockerPath) {
-  & $dockerPath info --format '{{.ServerVersion}}' 2>$null | Out-Null
+  try {
+    & $dockerPath info --format '{{.ServerVersion}}' 2>$null | Out-Null
+  } catch {
+    # Docker daemon check is non-blocking in preflight.
+  }
   $checks += [PSCustomObject]@{
     Check = 'Docker daemon reachable'
     Result = if ($LASTEXITCODE -eq 0) { 'PASS' } else { 'WARN' }
@@ -105,6 +144,36 @@ if ($script:AzPath) {
       Check = "Container App exists ($($config.containerAppName))"
       Result = if ($containerAppExists) { 'PASS' } else { 'WARN' }
       Detail = if ($containerAppExists) { 'Found' } else { 'Not found or no access' }
+    }
+
+    if ($config.staticWebAppName) {
+      $staticWebAppExists = Test-AzResource -Arguments @('staticwebapp', 'show', '--name', $config.staticWebAppName, '--resource-group', $config.resourceGroupName, '--output', 'none')
+      $checks += [PSCustomObject]@{
+        Check = "Static Web App exists ($($config.staticWebAppName))"
+        Result = if ($staticWebAppExists) { 'PASS' } else { 'WARN' }
+        Detail = if ($staticWebAppExists) { 'Found' } else { 'Not found or no access' }
+      }
+    }
+
+    $hasMongo = Has-ConfigOrEnvValue -ConfigName 'mongoDbUri' -EnvName 'MONGODB_URI'
+    $checks += [PSCustomObject]@{
+      Check = 'MongoDB URI configured'
+      Result = if ($hasMongo) { 'PASS' } else { 'FAIL' }
+      Detail = if ($hasMongo) { 'Configured (config or env)' } else { 'Set mongoDbUri or MONGODB_URI before API deploy' }
+    }
+
+    $hasJwt = Has-ConfigOrEnvValue -ConfigName 'jwtSecret' -EnvName 'JWT_SECRET'
+    $checks += [PSCustomObject]@{
+      Check = 'JWT secret configured'
+      Result = if ($hasJwt) { 'PASS' } else { 'FAIL' }
+      Detail = if ($hasJwt) { 'Configured (config or env)' } else { 'Set jwtSecret or JWT_SECRET before API deploy' }
+    }
+
+    $hasClientConfig = ($config.clientUrl -as [string]) -or ($config.staticWebAppName -as [string])
+    $checks += [PSCustomObject]@{
+      Check = 'Frontend URL configured'
+      Result = if ($hasClientConfig) { 'PASS' } else { 'WARN' }
+      Detail = if ($hasClientConfig) { 'Configured directly or via staticWebAppName' } else { 'Set clientUrl or staticWebAppName to configure CORS' }
     }
   } else {
     $checks += [PSCustomObject]@{

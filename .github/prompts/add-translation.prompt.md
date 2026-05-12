@@ -24,3 +24,4 @@ $input
 - English (`en`) should be natural English
 - Never duplicate an existing key; search for it first
 - Keep keys grouped by feature/page context (check how existing keys are grouped)
+- Do not hardcode environment-specific URLs into translation text

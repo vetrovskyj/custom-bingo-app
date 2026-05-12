@@ -1,5 +1,12 @@
 # Azure implementation plan (low cost to scale)
 
+## Current status
+
+- Foundation resources are provisioned in `westeurope`
+- Backend is live on Azure Container Apps
+- Frontend deployment is handled via Azure Static Web Apps deployment token or pipeline
+- Validation scripts now exist for preflight, backend deploy, frontend deploy, smoke test, and end-to-end Azure setup validation
+
 ## Objective
 
 Move from Vercel + Render + Atlas to an Azure-first platform with minimal startup cost and a clear scale-up path.

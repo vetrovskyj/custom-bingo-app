@@ -125,6 +125,9 @@ dist
 # Uploaded files
 server/uploads/
 
+# Local Azure deployment secrets
+scripts/azure/appsettings.parameters.json
+
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 

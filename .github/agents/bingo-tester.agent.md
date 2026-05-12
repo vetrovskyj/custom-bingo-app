@@ -20,6 +20,7 @@ Increase confidence with fast, maintainable tests:
 - Prefer mocking HTTP in unit/integration tests; avoid real network calls there
 - Keep E2E tests focused on critical user journeys and route guards
 - For performance smoke, test stable endpoints first (`/api/health`) and enforce explicit thresholds
+- For Azure runtime validation, use `scripts/azure/Test-Deployment.ps1` or `scripts/azure/Validate-AzureSetup.ps1` before suggesting broader infrastructure changes
 
 ## Workflow
 

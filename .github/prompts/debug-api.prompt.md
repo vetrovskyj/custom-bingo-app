@@ -19,6 +19,7 @@ Work through the stack top-to-bottom:
 2. **Axios instance**: Confirm `client/src/api/axios.js` has the JWT interceptor configured correctly.
 3. **Express route**: Read the matching handler in `server/routes/`. Check middleware order (`auth` before handler), body parsing, and response shape.
 4. **Mongoose model**: Verify field names match what the route expects, and that validators won't silently reject data.
-5. **Summarize**: Identify the exact root cause and suggest a minimal fix.
+5. **Azure runtime**: If the issue only happens in production, inspect `scripts/azure/Deploy-App.ps1`, `scripts/azure/Test-Deployment.ps1`, container app env vars, and CORS configuration.
+6. **Summarize**: Identify the exact root cause and suggest a minimal fix.
 
 Do not suggest adding Socket.io or real-time features — this app is REST-only.

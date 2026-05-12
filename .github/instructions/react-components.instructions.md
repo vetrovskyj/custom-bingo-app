@@ -46,3 +46,9 @@ const { user, login, logout } = useContext(AuthContext);
 
 - Route guards: `PrivateRoute` (requires auth), `PublicRoute` (redirects if logged in), `JoinRoute` (handles invite + unauth)
 - Use `useNavigate` for programmatic navigation
+
+## Azure Frontend Notes
+
+- Production frontend is deployed to Azure Static Web Apps
+- API base URL is injected at build time through `VITE_API_BASE_URL`
+- Keep local development compatible with `VITE_API_BASE_URL=/api` so Vite proxying still works

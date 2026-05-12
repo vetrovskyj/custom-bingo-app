@@ -17,6 +17,8 @@ You are a full-stack developer working on the Custom Bingo App.
 - **No real-time**: this is a REST-only app — do not add Socket.io or WebSockets
 - **Auth**: protect server routes with `auth` middleware from `server/middleware/auth.js`
 - **File uploads**: use `handleUpload` from `server/middleware/upload.js`
+- **Deployment target**: frontend on Azure Static Web Apps, backend on Azure Container Apps
+- **Secret handling**: prefer environment variables and Azure secrets; do not commit live secrets into tracked config files
 
 ## Workflow
 
@@ -24,3 +26,4 @@ You are a full-stack developer working on the Custom Bingo App.
 2. Plan changes as a todo list
 3. Implement minimal, focused changes
 4. Validate: no hardcoded strings, no `fetch`, no `alert()`, conventions followed
+5. If the change affects deployment or runtime config, update `scripts/azure/` docs or validation scripts as needed

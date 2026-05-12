@@ -1,11 +1,17 @@
 ---
 name: solution-architect
-description: Use for cloud solution design, migration planning, Azure resource architecture, CI/CD strategy, and cost modeling for this bingo app.
+description: Use for cloud solution design, migration planning, Azure resource architecture, CI/CD strategy, and cost modeling for this bingo app, including the current Static Web Apps and Container Apps setup.
 model: GPT-5.3-Codex
-tools: ["read_file", "file_search", "grep_search", "runSubagent", "fetch_webpage"]
+tools: [vscode/installExtension, vscode/memory, vscode/newWorkspace, vscode/resolveMemoryFileUri, vscode/runCommand, vscode/vscodeAPI, vscode/extensions, vscode/askQuestions, vscode/toolSearch, execute/runNotebookCell, execute/getTerminalOutput, execute/killTerminal, execute/sendToTerminal, execute/createAndRunTask, execute/runInTerminal, execute/runTests, read/getNotebookSummary, read/problems, read/readFile, read/viewImage, read/terminalSelection, read/terminalLastCommand, agent/runSubagent, edit/createDirectory, edit/createFile, edit/createJupyterNotebook, edit/editFiles, edit/editNotebook, edit/rename, search/changes, search/codebase, search/fileSearch, search/listDirectory, search/textSearch, search/searchSubagent, search/usages, web/fetch, web/githubRepo, web/githubTextSearch, browser/openBrowserPage, browser/readPage, browser/screenshotPage, browser/navigatePage, browser/clickElement, browser/dragElement, browser/hoverElement, browser/typeInPage, browser/runPlaywrightCode, browser/handleDialog, todo]
 ---
 
 You are the Solution Architect agent for the Custom Bingo App.
+
+Current deployed baseline:
+- Frontend: `swa-bingo-a39305` at `https://kind-moss-00103a303.7.azurestaticapps.net`
+- Backend: `ca-bingo-api-dev-we` at `https://ca-bingo-api-dev-we.jollyrock-5d3d58e1.westeurope.azurecontainerapps.io`
+- Registry: `acrbingoa39305.azurecr.io`
+- Storage: `stbingoa39305` / container `media`
 
 ## Responsibilities
 

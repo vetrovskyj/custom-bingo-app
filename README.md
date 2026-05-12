@@ -1,6 +1,11 @@
 # Custom Bingo App
 
-A full-stack web application for creating and playing custom bingo games with friends. Built with React, Node.js, Express, and MongoDB.
+A full-stack web application for creating and playing custom bingo games with friends. Built with React, Node.js, Express, and MongoDB, and currently deployed on Azure.
+
+## Live URLs
+
+- Frontend: `https://kind-moss-00103a303.7.azurestaticapps.net`
+- Backend API: `https://ca-bingo-api-dev-we.jollyrock-5d3d58e1.westeurope.azurecontainerapps.io/api`
 
 ## Features
 
@@ -20,6 +25,7 @@ A full-stack web application for creating and playing custom bingo games with fr
 - **Auth:** JWT + bcrypt
 - **File Uploads:** Multer
 - **Email:** Nodemailer (optional)
+- **Azure Hosting:** Static Web Apps, Container Apps, Azure Container Registry, Blob Storage, Application Insights
 
 ## Prerequisites
 
@@ -68,6 +74,8 @@ npm run dev
 ```
 
 The app will be available at **http://localhost:5173**
+
+For the current Azure workflow and deploy commands, see [docs/azure-development-runbook.md](docs/azure-development-runbook.md).
 
 ## Project Structure
 
@@ -146,18 +154,12 @@ SMTP_USER=your_email@gmail.com
 SMTP_PASS=your_app_password
 ```
 
-## Free Deployment Guide
+## Azure Deployment Summary
 
-- **MongoDB Atlas (Database)** — Create an M0 free-tier cluster, add your database user, and whitelist `0.0.0.0/0` or Render's outbound IP list. Copy the connection string into `MONGODB_URI` in `server/.env`.
-- **Render Free Web Service (Backend)** — Push this repo to GitHub, create a new Web Service at Render, point it to `server`, set the build command to `npm install` and start command to `npm start`, then add the env vars from [server/.env.example](server/.env.example). Include every frontend URL in `ALLOWED_ORIGINS` (Render URL, Netlify/Vercel URL, and your custom domain) so CORS accepts them.
-- **Netlify or Vercel (Frontend)** — Import the repo, select `client` as the root, keep the default `npm run build`, and expose `VITE_API_BASE_URL` pointing at your Render API (for example `https://custom-bingo-api.onrender.com/api`). Each platform gives you a free subdomain (`*.netlify.app` or `*.vercel.app`).
-- **Free Custom Domain** — If you want a human-friendly domain at no cost, request a subdomain from services like `js.org`, `is-a.dev`, or `thedev.id`. Once approved, add the CNAME they provide to your Netlify/Vercel site and list the final domain inside `CLIENT_URL`, `ALLOWED_ORIGINS`, and `VITE_API_BASE_URL`.
-- **Optional Cloudflare Proxy** — Point your chosen domain to Cloudflare’s free tier, add the Netlify/Vercel CNAME, and use Cloudflare SSL + caching. Cloudflare also lets you create free `pages.dev` subdomains if you prefer deploying there.
+- **Frontend** — Azure Static Web Apps Free (`swa-bingo-a39305`)
+- **Backend** — Azure Container Apps (`ca-bingo-api-dev-we`)
+- **Container Registry** — Azure Container Registry Basic (`acrbingoa39305`)
+- **Uploads** — Azure Blob Storage (`stbingoa39305/media`)
+- **Validation** — `scripts/azure/Validate-AzureSetup.ps1`
 
-## Deployment Checklist
-
-- Build passes locally with `npm run build` in `client` and `npm start` in `server`.
-- `server/.env` contains production values for `CLIENT_URL` and `ALLOWED_ORIGINS` covering every domain that will load the frontend.
-- `client/.env` sets `VITE_API_BASE_URL` to the fully-qualified backend URL (including `/api`).
-- Render service shows `Server running on port 5000` in its logs and `/api/health` responds with `{ status: "ok" }`.
-- Netlify/Vercel site loads, hits the deployed `/api` successfully, and assets are served from the CDN-backed domain.
+For deploy and development details, see [docs/azure-development-runbook.md](docs/azure-development-runbook.md).

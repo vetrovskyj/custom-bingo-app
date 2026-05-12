@@ -29,3 +29,4 @@ $input
    - Wire the new page into `client/src/App.jsx` with the correct route guard (`PrivateRoute` / `PublicRoute` / `JoinRoute`)
 
 4. **Final check**: verify there are no hardcoded strings and no direct `fetch` or raw `axios` calls.
+5. **Deployment check**: if the feature changes runtime config, uploads, or API routes, mention whether `scripts/azure/Deploy-App.ps1`, `scripts/azure/Deploy-Frontend.ps1`, or `scripts/azure/Validate-AzureSetup.ps1` should also be updated.

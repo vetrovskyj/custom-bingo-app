@@ -62,3 +62,10 @@ try { ... } catch (err) {
 - Never expose `password` or `__v` in responses
 - Validate `req.body` fields before saving to DB
 - CORS origin whitelist is managed via `ALLOWED_ORIGINS` env var — do not hardcode origins
+
+## Azure Runtime Notes
+
+- Production backend runs in Azure Container Apps behind HTTPS ingress
+- Keep the health endpoint at `/api/health` working for smoke tests and deployment validation
+- Do not assume local disk persistence in production; uploads should continue to work with the Azure Blob fallback in `server/services/mediaStorage.js`
+- Keep server startup compatible with `PORT` from the environment
