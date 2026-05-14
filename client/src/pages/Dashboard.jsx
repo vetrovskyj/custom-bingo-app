@@ -16,6 +16,9 @@ const Dashboard = () => {
   const [joinCode, setJoinCode] = useState('');
   const [joining, setJoining] = useState(false);
 
+  const getPlayerCount = (game) => game.playerCount ?? game.players?.length ?? 0;
+  const getPlayerPreview = (game) => game.playerPreview ?? game.players ?? [];
+
   useEffect(() => {
     fetchGames();
 
@@ -129,18 +132,18 @@ const Dashboard = () => {
                   )}
                   <div className="game-card-meta">
                     <span>📐 {game.rows}×{game.cols}</span>
-                    <span>👥 {game.players?.length || 0} {t('dashboard.players')}</span>
+                    <span>👥 {getPlayerCount(game)} {t('dashboard.players')}</span>
                   </div>
-                  {game.players && game.players.length > 0 && (
+                  {getPlayerPreview(game).length > 0 && (
                     <div className="game-card-players">
                       <div className="avatar-stack">
-                        {game.players.slice(0, 5).map(player => (
+                        {getPlayerPreview(game).slice(0, 5).map(player => (
                           <Avatar key={player._id} user={player} size="sm" />
                         ))}
                       </div>
-                      {game.players.length > 5 && (
+                      {getPlayerCount(game) > 5 && (
                         <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          {t('dashboard.morePlayers', { n: game.players.length - 5 })}
+                          {t('dashboard.morePlayers', { n: getPlayerCount(game) - 5 })}
                         </span>
                       )}
                     </div>
@@ -179,13 +182,13 @@ const Dashboard = () => {
                   )}
                   <div className="game-card-meta">
                     <span>📐 {game.rows}×{game.cols}</span>
-                    <span>👥 {game.players?.length || 0} {t('dashboard.players')}</span>
+                    <span>👥 {getPlayerCount(game)} {t('dashboard.players')}</span>
                     <span>{t('dashboard.by', { name: game.creator?.name })}</span>
                   </div>
-                  {game.players && game.players.length > 0 && (
+                  {getPlayerPreview(game).length > 0 && (
                     <div className="game-card-players">
                       <div className="avatar-stack">
-                        {game.players.slice(0, 5).map(player => (
+                        {getPlayerPreview(game).slice(0, 5).map(player => (
                           <Avatar key={player._id} user={player} size="sm" />
                         ))}
                       </div>

@@ -8,6 +8,18 @@ const { storeUploadedImage } = require('../services/mediaStorage');
 
 const router = express.Router();
 
+function buildUserLookup(users) {
+  const map = new Map();
+  users.forEach((user) => {
+    map.set(user._id.toString(), {
+      _id: user._id,
+      name: user.name,
+      profilePicture: user.profilePicture,
+    });
+  });
+  return map;
+}
+
 // POST /api/bingo - Create a new bingo game
 router.post('/', auth, async (req, res) => {
   try {
@@ -60,11 +72,47 @@ router.post('/', auth, async (req, res) => {
 router.get('/my-games', auth, async (req, res) => {
   try {
     const games = await BingoGame.find({ creator: req.userId })
-      .populate('creator', 'name email profilePicture')
-      .populate('players', 'name email profilePicture')
-      .sort({ createdAt: -1 });
+      .select('title description rows cols isActive players createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
 
-    res.json({ games });
+    const previewUserIds = [
+      ...new Set(
+        games.flatMap((game) =>
+          (game.players || []).slice(0, 5).map((playerId) => playerId.toString())
+        )
+      ),
+    ];
+
+    const previewUsers = previewUserIds.length > 0
+      ? await User.find({ _id: { $in: previewUserIds } })
+          .select('name profilePicture')
+          .lean()
+      : [];
+
+    const previewUserLookup = buildUserLookup(previewUsers);
+
+    const summarizedGames = games.map((game) => {
+      const players = game.players || [];
+      const playerPreview = players
+        .slice(0, 5)
+        .map((playerId) => previewUserLookup.get(playerId.toString()))
+        .filter(Boolean);
+
+      return {
+        _id: game._id,
+        title: game.title,
+        description: game.description,
+        rows: game.rows,
+        cols: game.cols,
+        isActive: game.isActive,
+        createdAt: game.createdAt,
+        playerCount: players.length,
+        playerPreview,
+      };
+    });
+
+    res.json({ games: summarizedGames });
   } catch (error) {
     console.error('Get my games error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -79,11 +127,46 @@ router.get('/playing', auth, async (req, res) => {
       creator: { $ne: req.userId },
       isActive: true,
     })
-      .populate('creator', 'name email profilePicture')
-      .populate('players', 'name email profilePicture')
-      .sort({ createdAt: -1 });
+      .select('title description rows cols creator players isActive createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
 
-    res.json({ games });
+    const creatorIds = games.map((game) => game.creator.toString());
+    const previewUserIds = games.flatMap((game) =>
+      (game.players || []).slice(0, 5).map((playerId) => playerId.toString())
+    );
+    const userIds = [...new Set([...creatorIds, ...previewUserIds])];
+
+    const users = userIds.length > 0
+      ? await User.find({ _id: { $in: userIds } })
+          .select('name profilePicture')
+          .lean()
+      : [];
+
+    const userLookup = buildUserLookup(users);
+
+    const summarizedGames = games.map((game) => {
+      const players = game.players || [];
+      const playerPreview = players
+        .slice(0, 5)
+        .map((playerId) => userLookup.get(playerId.toString()))
+        .filter(Boolean);
+
+      return {
+        _id: game._id,
+        title: game.title,
+        description: game.description,
+        rows: game.rows,
+        cols: game.cols,
+        isActive: game.isActive,
+        createdAt: game.createdAt,
+        creator: userLookup.get(game.creator.toString()) || null,
+        playerCount: players.length,
+        playerPreview,
+      };
+    });
+
+    res.json({ games: summarizedGames });
   } catch (error) {
     console.error('Get playing games error:', error);
     res.status(500).json({ message: 'Server error' });

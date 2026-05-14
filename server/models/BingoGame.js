@@ -99,4 +99,8 @@ const bingoGameSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
+// Frequent dashboard queries benefit from explicit indexes.
+bingoGameSchema.index({ creator: 1, createdAt: -1 });
+bingoGameSchema.index({ players: 1, isActive: 1, createdAt: -1 });
+
 module.exports = mongoose.model('BingoGame', bingoGameSchema);

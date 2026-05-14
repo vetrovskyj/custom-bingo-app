@@ -77,6 +77,8 @@ The app will be available at **http://localhost:5173**
 
 For the current Azure workflow and deploy commands, see [docs/azure-development-runbook.md](docs/azure-development-runbook.md).
 
+For browser automation setup in VS Code via MCP, see [docs/mcp-browser-setup.md](docs/mcp-browser-setup.md).
+
 ## Project Structure
 
 ```

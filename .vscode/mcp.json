@@ -1,0 +1,23 @@
+{
+  "servers": {
+    "playwright": {
+      "command": "npx.cmd",
+      "args": [
+        "@playwright/mcp@latest",
+        "--browser",
+        "chromium",
+        "--caps",
+        "vision,devtools",
+        "--output-mode",
+        "stdout",
+        "--viewport-size",
+        "1440x900",
+        "--test-id-attribute",
+        "data-testid"
+      ],
+      "env": {
+        "PLAYWRIGHT_BROWSERS_PATH": "D:/custom-bingo-app/.cache/ms-playwright"
+      }
+    }
+  }
+}

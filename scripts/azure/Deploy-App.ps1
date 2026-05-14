@@ -154,6 +154,10 @@ $smtpHost = Get-ConfigOrEnvValue -ConfigName 'smtpHost' -EnvName 'SMTP_HOST' -De
 $smtpPort = Get-ConfigOrEnvValue -ConfigName 'smtpPort' -EnvName 'SMTP_PORT' -DefaultValue '587'
 $smtpUser = Get-ConfigOrEnvValue -ConfigName 'smtpUser' -EnvName 'SMTP_USER'
 $smtpPass = Get-ConfigOrEnvValue -ConfigName 'smtpPass' -EnvName 'SMTP_PASS'
+$minReplicas = Get-ConfigOrEnvValue -ConfigName 'containerAppMinReplicas' -EnvName 'CONTAINER_APP_MIN_REPLICAS' -DefaultValue '0'
+$maxReplicas = Get-ConfigOrEnvValue -ConfigName 'containerAppMaxReplicas' -EnvName 'CONTAINER_APP_MAX_REPLICAS' -DefaultValue '3'
+$containerCpu = Get-ConfigOrEnvValue -ConfigName 'containerAppCpu' -EnvName 'CONTAINER_APP_CPU' -DefaultValue '0.5'
+$containerMemory = Get-ConfigOrEnvValue -ConfigName 'containerAppMemory' -EnvName 'CONTAINER_APP_MEMORY' -DefaultValue '1.0Gi'
 
 $connectionString = & $script:AzPath storage account show-connection-string --name $storageAccountName --resource-group $resourceGroupName --query connectionString --output tsv
 if (-not $connectionString) {
@@ -223,10 +227,10 @@ if (-not $containerAppExists) {
     '--ingress', 'external',
     '--target-port', '5000',
     '--transport', 'http',
-    '--min-replicas', '0',
-    '--max-replicas', '2',
-    '--cpu', '0.25',
-    '--memory', '0.5Gi',
+    '--min-replicas', $minReplicas,
+    '--max-replicas', $maxReplicas,
+    '--cpu', $containerCpu,
+    '--memory', $containerMemory,
     '--registry-server', $acrLoginServer,
     '--registry-username', $acrUsername,
     '--registry-password', $acrPassword,
@@ -247,15 +251,19 @@ if (-not $containerAppExists) {
     '--server', $acrLoginServer,
     '--username', $acrUsername,
     '--password', $acrPassword
-  )
+  ) -DisplayText "az containerapp registry set --name $containerAppName --resource-group $resourceGroupName --server $acrLoginServer --username $acrUsername --password *****"
 
   Invoke-AzCli -Arguments (@(
     'containerapp', 'update',
     '--name', $containerAppName,
     '--resource-group', $resourceGroupName,
     '--image', $imageName,
+    '--min-replicas', $minReplicas,
+    '--max-replicas', $maxReplicas,
+    '--cpu', $containerCpu,
+    '--memory', $containerMemory,
     '--set-env-vars'
-  ) + $envArgs)
+  ) + $envArgs) -DisplayText "az containerapp update --name $containerAppName --resource-group $resourceGroupName --image $imageName --min-replicas $minReplicas --max-replicas $maxReplicas --cpu $containerCpu --memory $containerMemory --set-env-vars (values redacted)"
 }
 
 $apiHost = & $script:AzPath containerapp show --name $containerAppName --resource-group $resourceGroupName --query properties.configuration.ingress.fqdn --output tsv
@@ -264,6 +272,7 @@ Write-Host ''
 Write-Host 'API deployment completed.' -ForegroundColor Green
 Write-Host "Backend URL: https://$apiHost"
 Write-Host "Client URL used for CORS: $clientUrl"
+Write-Host "Scale profile: min=$minReplicas max=$maxReplicas cpu=$containerCpu memory=$containerMemory"
 Write-Host ''
 Write-Host 'Next manual step:' -ForegroundColor Yellow
 Write-Host "Set VITE_API_BASE_URL to https://$apiHost/api in Azure DevOps or your Static Web Apps deployment pipeline."
