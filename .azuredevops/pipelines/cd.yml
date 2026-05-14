@@ -3,6 +3,11 @@ trigger:
 
 pr: none
 
+parameters:
+  - name: enableDeploy
+    type: boolean
+    default: false
+
 pool:
   vmImage: ubuntu-latest
 
@@ -67,66 +72,67 @@ stages:
             displayName: Validate server syntax
             workingDirectory: server
 
-  - stage: DeployApi
-    displayName: Deploy backend to Container Apps
-    dependsOn: Validate
-    jobs:
-      - job: deploy_backend
-        displayName: Build and deploy API
-        steps:
-          - task: Docker@2
-            displayName: Build and push API image
-            inputs:
-              command: buildAndPush
-              containerRegistry: '$(acrServiceConnection)'
-              repository: '$(imageRepository)'
-              dockerfile: 'server/Dockerfile'
-              buildContext: 'server'
-              tags: |
-                $(Build.BuildId)
-                latest
+  - ${{ if eq(parameters.enableDeploy, true) }}:
+      - stage: DeployApi
+        displayName: Deploy backend to Container Apps
+        dependsOn: Validate
+        jobs:
+          - job: deploy_backend
+            displayName: Build and deploy API
+            steps:
+              - task: Docker@2
+                displayName: Build and push API image
+                inputs:
+                  command: buildAndPush
+                  containerRegistry: '$(acrServiceConnection)'
+                  repository: '$(imageRepository)'
+                  dockerfile: 'server/Dockerfile'
+                  buildContext: 'server'
+                  tags: |
+                    $(Build.BuildId)
+                    latest
 
-          - task: AzureCLI@2
-            displayName: Update Container App image and env
-            inputs:
-              azureSubscription: '$(azureServiceConnection)'
-              scriptType: bash
-              scriptLocation: inlineScript
-              inlineScript: |
-                az containerapp update \
-                  --name "$(containerAppName)" \
-                  --resource-group "$(resourceGroup)" \
-                  --image "$(acrLoginServer)/$(imageRepository):$(Build.BuildId)" \
-                  --set-env-vars \
-                    PORT=5000 \
-                    NODE_ENV=production \
-                    MONGODB_URI="$(MONGODB_URI)" \
-                    JWT_SECRET="$(JWT_SECRET)" \
-                    CLIENT_URL="$(CLIENT_URL)" \
-                    ALLOWED_ORIGINS="$(ALLOWED_ORIGINS)" \
-                    SMTP_HOST="$(SMTP_HOST)" \
-                    SMTP_PORT="$(SMTP_PORT)" \
-                    SMTP_USER="$(SMTP_USER)" \
-                    SMTP_PASS="$(SMTP_PASS)" \
-                    AZURE_STORAGE_CONNECTION_STRING="$(AZURE_STORAGE_CONNECTION_STRING)" \
-                    AZURE_STORAGE_CONTAINER_NAME="$(AZURE_STORAGE_CONTAINER_NAME)" \
-                    AZURE_STORAGE_PUBLIC_BASE_URL="$(AZURE_STORAGE_PUBLIC_BASE_URL)"
+              - task: AzureCLI@2
+                displayName: Update Container App image and env
+                inputs:
+                  azureSubscription: '$(azureServiceConnection)'
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    az containerapp update \
+                      --name "$(containerAppName)" \
+                      --resource-group "$(resourceGroup)" \
+                      --image "$(acrLoginServer)/$(imageRepository):$(Build.BuildId)" \
+                      --set-env-vars \
+                        PORT=5000 \
+                        NODE_ENV=production \
+                        MONGODB_URI="$(MONGODB_URI)" \
+                        JWT_SECRET="$(JWT_SECRET)" \
+                        CLIENT_URL="$(CLIENT_URL)" \
+                        ALLOWED_ORIGINS="$(ALLOWED_ORIGINS)" \
+                        SMTP_HOST="$(SMTP_HOST)" \
+                        SMTP_PORT="$(SMTP_PORT)" \
+                        SMTP_USER="$(SMTP_USER)" \
+                        SMTP_PASS="$(SMTP_PASS)" \
+                        AZURE_STORAGE_CONNECTION_STRING="$(AZURE_STORAGE_CONNECTION_STRING)" \
+                        AZURE_STORAGE_CONTAINER_NAME="$(AZURE_STORAGE_CONTAINER_NAME)" \
+                        AZURE_STORAGE_PUBLIC_BASE_URL="$(AZURE_STORAGE_PUBLIC_BASE_URL)"
 
-  - stage: DeployWeb
-    displayName: Deploy frontend to Static Web Apps
-    dependsOn: Validate
-    jobs:
-      - job: deploy_frontend
-        displayName: Deploy web app
-        steps:
-          - task: AzureStaticWebApp@0
-            displayName: Deploy to Static Web Apps
-            inputs:
-              app_location: 'client'
-              output_location: 'dist'
-              app_build_command: 'npm run build'
-              skip_api_build: true
-              is_static_export: true
-            env:
-              azure_static_web_apps_api_token: '$(AZURE_STATIC_WEB_APPS_API_TOKEN)'
-              VITE_API_BASE_URL: '$(VITE_API_BASE_URL)'
+      - stage: DeployWeb
+        displayName: Deploy frontend to Static Web Apps
+        dependsOn: Validate
+        jobs:
+          - job: deploy_frontend
+            displayName: Deploy web app
+            steps:
+              - task: AzureStaticWebApp@0
+                displayName: Deploy to Static Web Apps
+                inputs:
+                  app_location: 'client'
+                  output_location: 'dist'
+                  app_build_command: 'npm run build'
+                  skip_api_build: true
+                  is_static_export: true
+                env:
+                  azure_static_web_apps_api_token: '$(AZURE_STATIC_WEB_APPS_API_TOKEN)'
+                  VITE_API_BASE_URL: '$(VITE_API_BASE_URL)'
